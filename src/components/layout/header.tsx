@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coins, Menu, Mountain, X } from "lucide-react";
+import { Coins, Menu, Mountain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -66,7 +65,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Auth State & Coin Balance */}
           {!isLoading && user && (
             <div className="hidden sm:flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full">
               <Coins className="h-4 w-4 text-yellow-500" />
@@ -74,7 +72,6 @@ export default function Header() {
             </div>
           )}
 
-          {/* Desktop User Menu */}
           {!isLoading && user ? (
             <div className="hidden md:block">
               <DropdownMenu>
@@ -116,7 +113,6 @@ export default function Header() {
             </div>
           )}
 
-          {/* Mobile Menu Trigger */}
           <div className="md:hidden">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>

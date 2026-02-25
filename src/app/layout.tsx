@@ -28,14 +28,16 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen bg-background font-body antialiased overflow-x-hidden", inter.variable)}>
         <UserProvider>
-            <div className="relative flex min-h-screen flex-col">
+          <div className="flex min-h-screen flex-col">
             <Header />
-            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-              {children}
+            <main className="flex-1">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+                {children}
+              </div>
             </main>
             <Footer />
-            </div>
-            <Toaster />
+          </div>
+          <Toaster />
         </UserProvider>
       </body>
     </html>

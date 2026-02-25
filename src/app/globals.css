@@ -61,12 +61,14 @@
 @layer base {
   html {
     scrollbar-gutter: stable;
+    width: 100%;
   }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    width: 100%;
   }
 }
 
