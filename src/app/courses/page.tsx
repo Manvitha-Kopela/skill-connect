@@ -14,6 +14,7 @@ import CourseCard from '@/components/course-card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Course } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Search } from 'lucide-react';
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -56,68 +57,78 @@ export default function CoursesPage() {
   const levels = ['all', 'Beginner', 'Intermediate', 'Advanced'];
 
   return (
-    <div>
-      <div className="mb-8 space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">Explore Courses</h1>
-        <p className="text-muted-foreground">
-          Find your next learning adventure from our curated list of courses.
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Explore Courses</h1>
+        <p className="text-lg text-muted-foreground max-w-2xl">
+          Find your next learning adventure from our curated list of courses designed by experts.
         </p>
       </div>
-      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Input
-          placeholder="Search courses..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="md:col-span-1"
-        />
-        <Select value={languageFilter} onValueChange={setLanguageFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by language" />
-          </SelectTrigger>
-          <SelectContent>
-            {languages.map(lang => (
-              <SelectItem key={lang} value={lang}>
-                {lang === 'all' ? 'All Languages' : lang}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={levelFilter} onValueChange={setLevelFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by level" />
-          </SelectTrigger>
-          <SelectContent>
-            {levels.map(level => (
-              <SelectItem key={level} value={level}>
-                {level === 'all' ? 'All Levels' : level}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search courses..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="grid grid-cols-2 lg:flex gap-4">
+          <Select value={languageFilter} onValueChange={setLanguageFilter}>
+            <SelectTrigger className="w-full lg:w-[180px]">
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent>
+              {languages.map(lang => (
+                <SelectItem key={lang} value={lang}>
+                  {lang === 'all' ? 'All Languages' : lang}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={levelFilter} onValueChange={setLevelFilter}>
+            <SelectTrigger className="w-full lg:w-[180px]">
+              <SelectValue placeholder="Level" />
+            </SelectTrigger>
+            <SelectContent>
+              {levels.map(level => (
+                <SelectItem key={level} value={level}>
+                  {level === 'all' ? 'All Levels' : level}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {loading ? (
-         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full" />)}
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[4/5] w-full" />)}
         </div>
       ) : (
         <motion.div
             layout
-            className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
             <AnimatePresence>
-            {filteredCourses.map((course) => (
+            {filteredCourses.length > 0 ? filteredCourses.map((course) => (
                 <motion.div
                 key={course.id}
                 layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
                 >
                 <CourseCard course={course} />
                 </motion.div>
-            ))}
+            )) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-xl text-muted-foreground">No courses found matching your filters.</p>
+              </div>
+            )}
             </AnimatePresence>
         </motion.div>
       )}

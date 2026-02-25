@@ -1,11 +1,13 @@
+
 'use client';
 
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import AnimatedBackground from './animated-background';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import Image from 'next/image';
 
 export default function Hero() {
   const containerVariants = {
@@ -31,47 +33,71 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden py-24 md:py-32 lg:py-40">
+    <section className="relative overflow-hidden py-16 md:py-24 lg:py-32">
       <AnimatedBackground />
-      <div className="container relative z-10">
-        <motion.div
-          className="mx-auto max-w-3xl text-center"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={itemVariants}>
-            <Badge variant="secondary" className="mb-4">
-              Now in Public Beta
-            </Badge>
-          </motion.div>
-          <motion.h1
-            className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl"
-            variants={itemVariants}
-          >
-            Skill Exchange + Community-Driven Learning
-          </motion.h1>
-          <motion.p
-            className="mt-6 text-lg text-muted-foreground"
-            variants={itemVariants}
-          >
-            The language-first, gamified platform to learn new skills, connect
-            with experts, and grow with a global community.
-          </motion.p>
+      <div className="relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <motion.div
-            className="mt-10 flex items-center justify-center gap-4"
-            variants={itemVariants}
+            className="text-center lg:text-left space-y-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
           >
-            <Button asChild size="lg">
-              <Link href="/courses">
-                Explore Courses <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/communities">Join Community</Link>
-            </Button>
+            <motion.div variants={itemVariants}>
+              <Badge variant="secondary" className="mb-4 py-1 px-3">
+                <Sparkles className="mr-2 h-3.5 w-3.5 text-accent" />
+                Now in Public Beta
+              </Badge>
+            </motion.div>
+            <motion.h1
+              className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1]"
+              variants={itemVariants}
+            >
+              Skill Exchange + <span className="text-primary">Community</span>-Driven Learning
+            </motion.h1>
+            <motion.p
+              className="max-w-xl mx-auto lg:mx-0 text-base sm:text-lg text-muted-foreground leading-relaxed"
+              variants={itemVariants}
+            >
+              The language-first, gamified platform to learn new skills, connect
+              with experts, and grow with a global community.
+            </motion.p>
+            <motion.div
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4"
+              variants={itemVariants}
+            >
+              <Button asChild size="lg" className="w-full sm:w-auto px-8">
+                <Link href="/courses">
+                  Explore Courses <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-8">
+                <Link href="/communities">Join Community</Link>
+              </Button>
+            </motion.div>
           </motion.div>
-        </motion.div>
+
+          <motion.div 
+            className="hidden lg:block relative"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <div className="relative aspect-square max-w-[500px] ml-auto">
+              <div className="absolute inset-0 bg-primary/10 rounded-3xl -rotate-6 transition-transform hover:rotate-0 duration-500" />
+              <div className="absolute inset-0 bg-accent/10 rounded-3xl rotate-3 transition-transform hover:rotate-0 duration-500" />
+              <div className="relative h-full w-full overflow-hidden rounded-3xl border shadow-2xl">
+                 <Image 
+                  src="https://picsum.photos/seed/skillconnect/800/800"
+                  alt="SkillConnect Learning Experience"
+                  fill
+                  className="object-cover"
+                  data-ai-hint="online learning"
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

@@ -14,6 +14,7 @@ import CommunityCard from '@/components/community-card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Community } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Search } from 'lucide-react';
 
 export default function CommunitiesPage() {
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -53,22 +54,27 @@ export default function CommunitiesPage() {
   const categories = ['all', ...Array.from(new Set(communities.map(c => c.category)))];
 
   return (
-    <div>
-      <div className="mb-8 space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">Find Your Tribe</h1>
-        <p className="text-muted-foreground">
-          Connect with peers, mentors, and friends in our vibrant communities.
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Find Your Tribe</h1>
+        <p className="text-lg text-muted-foreground max-w-2xl">
+          Connect with peers, mentors, and friends in our vibrant, community-driven ecosystem.
         </p>
       </div>
-      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Input
-          placeholder="Search communities..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search communities..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by category" />
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             {categories.map(cat => (
@@ -81,27 +87,31 @@ export default function CommunitiesPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full" />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="aspect-[4/5] w-full" />)}
         </div>
       ) : (
         <motion.div
             layout
-            className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
             <AnimatePresence>
-            {filteredCommunities.map((community) => (
+            {filteredCommunities.length > 0 ? filteredCommunities.map((community) => (
                 <motion.div
                 key={community.id}
                 layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.3 }}
             >
                 <CommunityCard community={community} />
                 </motion.div>
-            ))}
+            )) : (
+              <div className="col-span-full py-20 text-center">
+                <p className="text-xl text-muted-foreground">No communities found.</p>
+              </div>
+            )}
             </AnimatePresence>
         </motion.div>
       )}
