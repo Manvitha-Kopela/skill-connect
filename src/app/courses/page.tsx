@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,16 +26,16 @@ export default function CoursesPage() {
     async function fetchCourses() {
       try {
         const res = await fetch('/api/courses');
-        if (res.ok) {
-            const data = await res.json();
-            setCourses(Array.isArray(data) ? data : []);
+        const data = await res.json();
+
+        if (res.ok && Array.isArray(data)) {
+            setCourses(data);
         } else {
-            const errorData = await res.json().catch(() => null);
-            console.error("Failed to fetch courses:", res.status, errorData?.message || res.statusText);
+            console.error("Failed to fetch courses:", data?.message || "Unknown error");
             setCourses([]);
         }
       } catch (error) {
-        console.error("Failed to fetch courses", error);
+        console.error("Network error while fetching courses", error);
         setCourses([]);
       } finally {
         setLoading(false);
@@ -45,13 +44,13 @@ export default function CoursesPage() {
     fetchCourses();
   }, []);
 
-  const filteredCourses = courses.filter(course => {
+  const filteredCourses = Array.isArray(courses) ? courses.filter(course => {
     return (
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (languageFilter === 'all' || course.language === languageFilter) &&
       (levelFilter === 'all' || course.level === levelFilter)
     );
-  });
+  }) : [];
 
   const languages = ['all', ...Array.from(new Set(courses.map(c => c.language)))];
   const levels = ['all', 'Beginner', 'Intermediate', 'Advanced'];
@@ -125,7 +124,7 @@ export default function CoursesPage() {
                 <CourseCard course={course} />
                 </motion.div>
             )) : (
-              <div className="col-span-full py-20 text-center">
+              <div className="col-span-full py-20 text-center border rounded-xl bg-muted/20">
                 <p className="text-xl text-muted-foreground">No courses found matching your filters.</p>
               </div>
             )}

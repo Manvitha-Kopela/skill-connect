@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,16 +25,16 @@ export default function CommunitiesPage() {
     async function fetchCommunities() {
       try {
         const res = await fetch('/api/communities');
-        if (res.ok) {
-          const data = await res.json();
-          setCommunities(Array.isArray(data) ? data : []);
+        const data = await res.json();
+
+        if (res.ok && Array.isArray(data)) {
+          setCommunities(data);
         } else {
-          const errorData = await res.json().catch(() => null);
-          console.error("Failed to fetch communities:", res.status, errorData?.message || res.statusText);
+          console.error("Failed to fetch communities:", data?.message || "Unknown error");
           setCommunities([]);
         }
       } catch (error) {
-        console.error("Failed to fetch communities", error);
+        console.error("Network error while fetching communities", error);
         setCommunities([]);
       } finally {
         setLoading(false);
@@ -44,12 +43,13 @@ export default function CommunitiesPage() {
     fetchCommunities();
   }, []);
 
-  const filteredCommunities = communities.filter(community => {
+  // Ensure filteredCommunities is always based on an array
+  const filteredCommunities = Array.isArray(communities) ? communities.filter(community => {
     return (
       community.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       (categoryFilter === 'all' || community.category === categoryFilter)
     );
-  });
+  }) : [];
   
   const categories = ['all', ...Array.from(new Set(communities.map(c => c.category)))];
 
@@ -108,7 +108,7 @@ export default function CommunitiesPage() {
                 <CommunityCard community={community} />
                 </motion.div>
             )) : (
-              <div className="col-span-full py-20 text-center">
+              <div className="col-span-full py-20 text-center border rounded-xl bg-muted/20">
                 <p className="text-xl text-muted-foreground">No communities found.</p>
               </div>
             )}

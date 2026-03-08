@@ -5,25 +5,26 @@ export async function GET() {
   try {
     const communities = await prisma.community.findMany({
       orderBy: {
-        memberCount: 'desc'
+        createdAt: 'desc'
       }
     });
     
+    // Always return an array, even if empty
     return NextResponse.json(communities || []);
   } catch (error: any) {
     console.error('Error in /api/communities:', error);
 
-    // Check if the error is due to missing tables
+    // Detect if table is missing
     if (error.code === 'P2021') {
       return NextResponse.json({ 
         message: 'Database tables are missing. Please run "npx prisma db push".',
-        detail: error.message 
+        error: 'TABLE_NOT_FOUND'
       }, { status: 500 });
     }
 
     return NextResponse.json({ 
-      message: 'Failed to fetch communities from database',
-      detail: error.message 
+      message: 'Internal server error while fetching communities',
+      error: error.message 
     }, { status: 500 });
   }
 }
