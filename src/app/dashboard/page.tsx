@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Coins, BookOpen, Users, Trophy, ChevronRight, Clock, Star } from 'lucide-react';
+import { Coins, BookOpen, Users, Trophy, ChevronRight, Clock, Star, Plus } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -93,7 +93,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-3xl font-extrabold tracking-tight">Welcome, {user.name}!</h1>
-                <p className="text-muted-foreground mt-1">Ready to learn something new today?</p>
+                <p className="text-muted-foreground mt-1">Ready to learn or teach something new today?</p>
               </div>
               <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 px-4 py-2 rounded-full border border-yellow-500/20">
                 <Coins className="h-5 w-5 fill-current" />
@@ -134,36 +134,60 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
-              <div className="lg:col-span-8 space-y-6">
-                {user.role === 'LEARNER' && (
-                  <div className="space-y-4">
+              <div className="lg:col-span-8 space-y-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <h2 className="text-xl font-bold">Your Learning Progress</h2>
-                    <div className="grid gap-4">
-                      {data?.enrolledCourses.length === 0 ? (
-                        <Card>
-                          <CardContent className="p-10 text-center space-y-4">
-                            <p className="text-muted-foreground">You haven't enrolled in any courses yet.</p>
-                            <Button asChild variant="outline">
-                              <Link href="/courses">Explore Courses</Link>
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        data?.enrolledCourses.map(course => (
-                          <CourseProgressCard 
-                            key={course.id}
-                            id={course.id}
-                            title={course.title} 
-                            progress={course.progress} 
-                            nextLesson={course.nextLesson || "Next module"} 
-                          />
-                        ))
-                      )}
-                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/courses">Browse All</Link>
+                    </Button>
                   </div>
-                )}
-                {user.role === 'CREATOR' && <CreatorDashboard />}
-                {user.role === 'ADMIN' && <AdminDashboard />}
+                  <div className="grid gap-4">
+                    {data?.enrolledCourses.length === 0 ? (
+                      <Card>
+                        <CardContent className="p-10 text-center space-y-4">
+                          <p className="text-muted-foreground">You haven't enrolled in any courses yet.</p>
+                          <Button asChild variant="outline">
+                            <Link href="/courses">Explore Courses</Link>
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      data?.enrolledCourses.map(course => (
+                        <CourseProgressCard 
+                          key={course.id}
+                          id={course.id}
+                          title={course.title} 
+                          progress={course.progress} 
+                          nextLesson={course.nextLesson || "Next module"} 
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold">Course Management</h2>
+                    <Button size="sm" className="gap-2">
+                      <Plus className="h-4 w-4" /> Create Course
+                    </Button>
+                  </div>
+                  <Card>
+                      <CardContent className="p-10 text-center space-y-4">
+                          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <BookOpen className="h-6 w-6" />
+                          </div>
+                          <div className="space-y-2">
+                            <p className="font-semibold text-lg">Become a Creator</p>
+                            <p className="text-muted-foreground text-sm max-w-xs mx-auto">
+                              Anyone can create a course on SkillConnect. Earn 50 coins for every course you publish!
+                            </p>
+                          </div>
+                          <Button variant="outline">Manage Your Courses</Button>
+                      </CardContent>
+                  </Card>
+                </div>
               </div>
               <div className="lg:col-span-4 space-y-6">
                 <ActivitySidebar activities={data?.activities || []} />
@@ -250,34 +274,4 @@ function ActivitySidebar({ activities }: { activities: any[] }) {
       </CardContent>
     </Card>
   );
-}
-  
-function CreatorDashboard() {
-    return (
-        <div className="space-y-4">
-            <h2 className="text-xl font-bold">Course Management</h2>
-            <Card>
-                <CardContent className="p-10 text-center space-y-4">
-                    <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <BookOpen className="h-6 w-6" />
-                    </div>
-                    <p className="text-muted-foreground">You haven't created any courses yet.</p>
-                    <Button>Create Your First Course</Button>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
-function AdminDashboard() {
-    return (
-        <div className="space-y-4">
-            <h2 className="text-xl font-bold">Admin Controls</h2>
-            <Card>
-                <CardContent className="p-6">
-                  <p className="text-sm text-muted-foreground">User and course management tools are currently in maintenance.</p>
-                </CardContent>
-            </Card>
-        </div>
-    );
 }
