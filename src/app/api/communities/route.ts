@@ -9,7 +9,7 @@ export async function GET() {
       }
     });
     
-    // Always return an array, even if empty
+    // Returning raw array as expected by the existing frontend logic
     return NextResponse.json(communities || []);
   } catch (error: any) {
     console.error('Error in /api/communities:', error);

@@ -9,8 +9,6 @@ export async function GET() {
           select: {
             id: true,
             name: true,
-            role: true,
-            // email is selected as a fallback for missing avatarUrl
             email: true,
           }
         },
