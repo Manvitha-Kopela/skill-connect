@@ -42,7 +42,7 @@ async function getCourse(id: string) {
 }
 
 async function getCurrentUserId() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
   if (!token) return null;
 
@@ -55,9 +55,10 @@ async function getCurrentUserId() {
   }
 }
 
-export default async function CourseDetailPage({ params }: { params: { id: string } }) {
+export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const [course, currentUserId] = await Promise.all([
-    getCourse(params.id),
+    getCourse(id),
     getCurrentUserId()
   ]);
 

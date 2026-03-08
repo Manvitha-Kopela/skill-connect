@@ -40,14 +40,15 @@ async function getTopContributors(communityId: string) {
     return users.map(user => ({...user, title: "Contributor"}));
 }
 
-export default async function CommunityDetailPage({ params }: { params: { id: string } }) {
-  const community = await getCommunity(params.id);
+export default async function CommunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const community = await getCommunity(id);
 
   if (!community) {
     notFound();
   }
 
-  const topContributors = await getTopContributors(params.id);
+  const topContributors = await getTopContributors(id);
   const loggedInUser = await prisma.user.findFirst();
 
   return (
@@ -112,7 +113,7 @@ export default async function CommunityDetailPage({ params }: { params: { id: st
         </div>
 
         {/* Desktop Sidebars (Hidden on mobile) */}
-        <aside className="hidden lg:block lg:col-span-3 space-y-6">
+        <aside className="hidden lg:block lg:col-span-3 space-y-1">
           <div className="sticky top-24">
             <Card>
               <CardHeader>
