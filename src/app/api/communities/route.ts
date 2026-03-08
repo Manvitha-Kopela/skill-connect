@@ -4,12 +4,25 @@ import prisma from '@/lib/prisma';
 export async function GET() {
   try {
     const communities = await prisma.community.findMany({
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
       orderBy: {
         createdAt: 'desc'
       }
     });
     
-    // Returning raw array as expected by the existing frontend logic
+    // Returning raw array as expected by the existing frontend logic in src/app/communities/page.tsx
     return NextResponse.json(communities || []);
   } catch (error: any) {
     console.error('Error in /api/communities:', error);
