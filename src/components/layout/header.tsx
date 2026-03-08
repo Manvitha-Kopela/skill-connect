@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Coins, Menu, Mountain } from "lucide-react";
+import { Coins, Menu, Mountain, User as UserIcon, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -93,11 +93,15 @@ export default function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>Dashboard</DropdownMenuItem>
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/dashboard')}>
+                    <Settings className="mr-2 h-4 w-4" /> Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    <UserIcon className="mr-2 h-4 w-4" /> Profile
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                    Log out
+                    <LogOut className="mr-2 h-4 w-4" /> Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -161,16 +165,28 @@ export default function Header() {
                   ))}
                   
                   {user && (
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className={cn(
-                        "text-lg font-medium px-4 py-2 rounded-md transition-colors",
-                        pathname === "/dashboard" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-                      )}
-                    >
-                      Dashboard
-                    </Link>
+                    <>
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "text-lg font-medium px-4 py-2 rounded-md transition-colors",
+                          pathname === "/dashboard" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        )}
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/profile"
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "text-lg font-medium px-4 py-2 rounded-md transition-colors",
+                          pathname === "/profile" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                        )}
+                      >
+                        Profile
+                      </Link>
+                    </>
                   )}
                 </nav>
 

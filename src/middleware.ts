@@ -1,9 +1,8 @@
-
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import * as jose from 'jose';
 
-const protectedRoutes = ['/dashboard']; // Add any other protected routes
+const protectedRoutes = ['/dashboard', '/profile'];
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value;
