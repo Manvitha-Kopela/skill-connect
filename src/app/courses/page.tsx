@@ -28,8 +28,8 @@ export default function CoursesPage() {
         const res = await fetch('/api/courses');
         const data = await res.json();
 
-        if (res.ok && Array.isArray(data)) {
-            setCourses(data);
+        if (res.ok && data.success && Array.isArray(data.courses)) {
+            setCourses(data.courses);
         } else {
             console.error("Failed to fetch courses:", data?.message || "Unknown error");
             setCourses([]);

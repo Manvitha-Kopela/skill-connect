@@ -10,7 +10,8 @@ export async function GET() {
             id: true,
             name: true,
             role: true,
-            avatarUrl: true,
+            // email is selected as a fallback for missing avatarUrl
+            email: true,
           }
         },
         modules: {
@@ -18,7 +19,7 @@ export async function GET() {
             lessons: true,
           },
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
       },
@@ -27,19 +28,24 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(courses || []);
+    return NextResponse.json({
+      success: true,
+      courses: courses || []
+    });
   } catch (error: any) {
-    console.error('Error in /api/courses:', error);
+    console.error("Courses API error:", error);
     
     // Check if the error is due to missing tables
     if (error.code === 'P2021') {
       return NextResponse.json({ 
+        success: false,
         message: 'Database tables are missing. Please run "npx prisma db push".',
         detail: error.message 
       }, { status: 500 });
     }
 
     return NextResponse.json({ 
+      success: false,
       message: 'Failed to fetch courses from database',
       detail: error.message 
     }, { status: 500 });
