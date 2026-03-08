@@ -55,10 +55,16 @@ async function getCurrentUserId() {
   }
 }
 
-export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default async function CourseDetailPage({ params }: PageProps) {
+  const { id: courseId } = await params;
   const [course, currentUserId] = await Promise.all([
-    getCourse(id),
+    getCourse(courseId),
     getCurrentUserId()
   ]);
 
