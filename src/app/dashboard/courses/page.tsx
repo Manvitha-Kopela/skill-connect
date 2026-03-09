@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { BookOpen, Plus, Calendar, Layers, ChevronRight, AlertCircle } from 'lucide-react';
+import { BookOpen, Plus, Calendar, Layers, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 interface InstructorCourse {
@@ -126,11 +125,11 @@ export default function MyCoursesPage() {
                     <span>{course._count.modules} Modules</span>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full group" asChild>
-                  <Link href={`/courses/${course.id}`}>
-                    View Page <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
+                <Link href={`/courses/${course.id}`}>
+                  <button className="w-full bg-orange-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-bold hover:bg-orange-600 transition-colors">
+                    View Page →
+                  </button>
+                </Link>
               </CardContent>
             </Card>
           ))}

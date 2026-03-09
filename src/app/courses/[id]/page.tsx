@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
@@ -14,7 +13,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { CheckCircle, Clock, Users, Play, ShieldCheck, Globe, Coins, Edit, PlusCircle, Settings } from 'lucide-react';
+import { CheckCircle, Clock, Users, Play, ShieldCheck, Globe, Coins, PlusCircle, Settings } from 'lucide-react';
 import Link from 'next/link';
 import EnrollmentButton from '@/components/enrollment-button';
 import { cookies } from 'next/headers';
