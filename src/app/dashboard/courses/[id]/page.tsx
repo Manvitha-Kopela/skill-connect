@@ -34,9 +34,25 @@ async function getCurrentUser() {
   }
 }
 
-async function getCourse(id: string) {
-  return await prisma.course.findUnique({
-    where: { id },
+export default async function CourseEditorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = await params;
+  const courseId = resolvedParams.id;
+
+  if (!courseId) {
+    throw new Error("Course ID is missing from route params");
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect('/login');
+  }
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
     include: {
       modules: {
         include: {
@@ -48,18 +64,6 @@ async function getCourse(id: string) {
       },
     },
   });
-}
-
-export default async function CreatorCoursePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const [user, course] = await Promise.all([
-    getCurrentUser(),
-    getCourse(id),
-  ]);
-
-  if (!user) {
-    redirect('/login');
-  }
 
   if (!course) {
     notFound();
