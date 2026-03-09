@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import { BookOpen, Plus, Calendar, Layers, AlertCircle } from 'lucide-react';
+import { BookOpen, Plus, Calendar, Layers, AlertCircle, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 interface InstructorCourse {
@@ -125,9 +125,9 @@ export default function MyCoursesPage() {
                     <span>{course._count.modules} Modules</span>
                   </div>
                 </div>
-                <Link href={`/courses/${course.id}`}>
+                <Link href={`/dashboard/courses/${course.id}`}>
                   <button className="w-full bg-orange-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-bold hover:bg-orange-600 transition-colors">
-                    View Page →
+                    <Settings className="h-4 w-4" /> Manage Course →
                   </button>
                 </Link>
               </CardContent>
