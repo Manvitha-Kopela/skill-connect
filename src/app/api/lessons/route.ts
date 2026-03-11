@@ -1,5 +1,7 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,16 +30,26 @@ export async function POST(req: NextRequest) {
     });
 
     let videoUrl = "";
-    let duration = "0:00";
+    let duration = "5:00"; // Default duration as calculating on server is complex without extra libs
 
-    if (videoFile) {
-      // Prototype simulation of video storage
-      // In a real production app, you'd use a cloud provider like Firebase Storage, S3, or Cloudinary
-      videoUrl = `/uploads/${Date.now()}-${videoFile.name.replace(/\s+/g, '_')}`;
+    if (videoFile && videoFile instanceof File) {
+      const filename = `${Date.now()}-${videoFile.name.replace(/\s+/g, '_')}`;
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
       
-      // Simulating duration calculation
-      // Probing file metadata usually requires native binaries on the server
-      duration = "5:45"; 
+      // Ensure the uploads directory exists inside public
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      // Convert File to Buffer and write to filesystem
+      const arrayBuffer = await videoFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const filePath = path.join(uploadDir, filename);
+      
+      fs.writeFileSync(filePath, buffer);
+      
+      // Store relative URL for public access
+      videoUrl = `/uploads/${filename}`;
     }
 
     const lesson = await prisma.lesson.create({
