@@ -30,7 +30,7 @@ export default async function ModuleManagementPage({ params }: { params: Promise
   const course = await prisma.course.findUnique({
     where: { id: courseId },
     include: {
-      modules: { orderBy: { createdAt: 'asc' } },
+      modules: { orderBy: { order: 'asc' } },
     },
   });
 
@@ -76,7 +76,7 @@ export default async function ModuleManagementPage({ params }: { params: Promise
                     </div>
                     <div className="flex flex-col">
                       <span className="font-bold">{module.title}</span>
-                      <span className="text-xs text-muted-foreground">Last updated {new Date(module.updatedAt).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground">Module Order: {module.order}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

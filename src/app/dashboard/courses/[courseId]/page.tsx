@@ -16,6 +16,7 @@ import {
   Edit, 
   ExternalLink,
   ChevronRight,
+  Coins,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +59,7 @@ export default async function CourseEditorPage({ params }: PageProps) {
           lessons: true,
         },
         orderBy: {
-          createdAt: 'asc',
+          order: 'asc',
         },
       },
     },
