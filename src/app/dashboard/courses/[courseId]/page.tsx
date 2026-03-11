@@ -1,4 +1,3 @@
-
 import prisma from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -37,12 +36,6 @@ async function getCurrentUser() {
   }
 }
 
-interface PageProps {
-  params: Promise<{
-    courseId: string;
-  }>;
-}
-
 export default async function CourseEditorPage({
   params,
 }: {
@@ -50,29 +43,33 @@ export default async function CourseEditorPage({
 }) {
   const courseId = params.courseId;
 
+  if (!courseId) {
+    return <div>Course ID missing from route</div>;
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     redirect('/login');
   }
 
   const course = await prisma.course.findUnique({
-  where: {
-    id: courseId
-  },
-  include: {
-    modules: {
-      include: {
-        lessons: true
-      },
-      orderBy: {
-        order: 'asc'
+    where: {
+      id: courseId
+    },
+    include: {
+      modules: {
+        include: {
+          lessons: true
+        },
+        orderBy: {
+          order: 'asc'
+        }
       }
     }
-  }
-});
+  });
 
   if (!course) {
-    notFound();
+    return <div>Course not found</div>;
   }
 
   if (course.instructorId !== user.userId) {
@@ -88,11 +85,13 @@ export default async function CourseEditorPage({
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to My Courses
         </Link>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/courses/${course.id}`} className="flex items-center gap-2">
-            <ExternalLink className="h-4 w-4" /> View Public Page
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/courses/${course.id}`} className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4" /> View Public Page
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
