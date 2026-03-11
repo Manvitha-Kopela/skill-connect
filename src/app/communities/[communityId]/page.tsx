@@ -16,6 +16,8 @@ import {
   Users,
   MessageSquare,
   Image as ImageIcon,
+  Info,
+  Trophy
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
