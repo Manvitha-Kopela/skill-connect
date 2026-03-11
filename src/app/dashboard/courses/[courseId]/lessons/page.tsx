@@ -1,124 +1,53 @@
-'use client';
+import prisma from "@/lib/prisma";
+import { cookies } from "next/headers";
+import * as jose from "jose";
+import { redirect } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Play, Clock, Video, PlusCircle } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import AddLessonButton from "@/components/add-lesson-button";
 
-import { useState, useEffect, use } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Play, Clock, Edit, Trash2, PlusCircle, Loader2, Video } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-
-export default function LessonsPage({
+export default async function LessonsPage({
   params,
 }: {
-  params: Promise<{ courseId: string }>;
+  params: { courseId: string };
 }) {
-  const resolvedParams = use(params);
-  const courseId = resolvedParams.courseId;
-  const { toast } = useToast();
-  const router = useRouter();
+  const courseId = params.courseId;
 
-  const [course, setCourse] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Lesson Dialog States
-  const [lessonOpen, setLessonOpen] = useState(false);
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
-  
-  // Lesson Form States
-  const [lessonTitle, setLessonTitle] = useState("");
-  const [lessonDescription, setLessonDescription] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
+  // Auth check
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) redirect("/login");
 
-  useEffect(() => {
-    async function fetchCourseData() {
-      try {
-        const res = await fetch(`/api/courses/${courseId}`);
-        if (res.ok) {
-          const data = await res.json();
-          // The public API returns { success: true, course: ... } based on typical patterns
-          // but our detail API /api/courses/[courseId] might differ. 
-          // Assuming a standard direct fetch or using the courses listing data.
-          // For now, let's fetch from the specific structure we need.
-          const modulesRes = await fetch(`/api/courses/${courseId}/modules`);
-          if (modulesRes.ok) {
-            const modules = await modulesRes.json();
-            // Fetch lessons for each module
-            const modulesWithLessons = await Promise.all(modules.map(async (m: any) => {
-              // Note: In a real app we'd have a nested include, but we'll adapt to existing APIs
-              return m; 
-            }));
-            setCourse({ id: courseId, modules: modulesWithLessons });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch course data', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCourseData();
-  }, [courseId]);
-
-  const handleAddLesson = async () => {
-    if (!activeModuleId || !lessonTitle.trim()) return;
-    
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append("moduleId", activeModuleId);
-      formData.append("title", lessonTitle.trim());
-      formData.append("description", lessonDescription.trim());
-      if (videoFile) {
-        formData.append("video", videoFile);
-      }
-
-      const res = await fetch("/api/lessons", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Failed to create lesson");
-
-      toast({ title: "Success", description: "Lesson added successfully" });
-      setLessonOpen(false);
-      resetForm();
-      router.refresh();
-      window.location.reload();
-    } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Could not add lesson" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setLessonTitle("");
-    setLessonDescription("");
-    setVideoFile(null);
-    setActiveModuleId(null);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  let userId: string;
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key");
+    const { payload } = await jose.jwtVerify(token, secret);
+    userId = payload.userId as string;
+  } catch (error) {
+    redirect("/login");
   }
+
+  // Fetch course safely with Prisma
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      modules: {
+        include: {
+          lessons: {
+            orderBy: {
+              order: "asc",
+            },
+          },
+        },
+        orderBy: {
+          order: "asc",
+        },
+      },
+    },
+  });
 
   if (!course) {
     return (
@@ -129,6 +58,11 @@ export default function LessonsPage({
         </Button>
       </div>
     );
+  }
+
+  // Ownership check
+  if (course.instructorId !== userId) {
+    redirect("/dashboard/courses");
   }
 
   return (
@@ -160,7 +94,7 @@ export default function LessonsPage({
             </CardContent>
           </Card>
         ) : (
-          course.modules.map((module: any) => (
+          course.modules.map((module) => (
             <div key={module.id} className="space-y-4">
               <div className="flex items-center justify-between px-2">
                 <div className="flex flex-col gap-1">
@@ -172,21 +106,11 @@ export default function LessonsPage({
                     <p className="text-sm text-muted-foreground">{module.description}</p>
                   )}
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="h-9 gap-2"
-                  onClick={() => {
-                    setActiveModuleId(module.id);
-                    setLessonOpen(true);
-                  }}
-                >
-                  <PlusCircle className="h-4 w-4" /> Add Lesson
-                </Button>
+                <AddLessonButton moduleId={module.id} />
               </div>
               <div className="grid gap-3">
                 {module.lessons && module.lessons.length > 0 ? (
-                  module.lessons.map((lesson: any) => (
+                  module.lessons.map((lesson) => (
                     <Card key={lesson.id} className="group hover:border-primary/50 transition-colors">
                       <CardContent className="p-5 flex items-center justify-between">
                         <div className="flex items-center gap-5">
@@ -200,7 +124,7 @@ export default function LessonsPage({
                             )}
                             <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground/80">
                               <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> {lesson.duration || "0:00"}
+                                <Clock className="h-3 w-3" /> {lesson.duration || "5:00"}
                               </span>
                               {lesson.videoUrl && (
                                 <span className="flex items-center gap-1 text-primary">
@@ -209,14 +133,6 @@ export default function LessonsPage({
                               )}
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -231,70 +147,6 @@ export default function LessonsPage({
           ))
         )}
       </div>
-
-      {/* Add Lesson Dialog */}
-      <Dialog open={lessonOpen} onOpenChange={(open) => {
-        setLessonOpen(open);
-        if (!open) resetForm();
-      }}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New Lesson</DialogTitle>
-            <DialogDescription>
-              Create a new learning session for your module.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="lesson-title">Lesson Title</Label>
-              <Input 
-                id="lesson-title" 
-                placeholder="e.g. Getting Started with Components" 
-                value={lessonTitle}
-                onChange={(e) => setLessonTitle(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lesson-description">Lesson Overview</Label>
-              <Textarea 
-                id="lesson-description" 
-                placeholder="Briefly describe what this lesson covers..." 
-                value={lessonDescription}
-                onChange={(e) => setLessonDescription(e.target.value)}
-                className="min-h-[80px] resize-none"
-              />
-            </div>
-            <div className="space-y-3">
-              <Label htmlFor="video-upload">Video Tutorial</Label>
-              <div className="grid gap-2">
-                <Input 
-                  id="video-upload" 
-                  type="file" 
-                  accept="video/*"
-                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                  className="cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                />
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                  Recommended: MP4, 1080p, Max 100MB
-                </p>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLessonOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddLesson} disabled={isSubmitting || !lessonTitle.trim()}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading Content...
-                </>
-              ) : (
-                'Create Lesson'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
