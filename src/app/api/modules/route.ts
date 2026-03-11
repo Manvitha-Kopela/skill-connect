@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
-    const { courseId, title } = await req.json();
+    const { courseId, title, description } = await req.json();
 
     if (!courseId) {
       return NextResponse.json({ message: 'Course ID is required' }, { status: 400 });
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     const module = await prisma.module.create({
       data: {
         title: title,
+        description: description || "",
         order: nextOrder,
         courseId
       }
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { moduleId, title } = await req.json();
+    const { moduleId, title, description } = await req.json();
 
     if (!moduleId || !title) {
       return NextResponse.json({ message: 'Module ID and Title are required' }, { status: 400 });
@@ -44,7 +45,10 @@ export async function PATCH(req: NextRequest) {
 
     const updatedModule = await prisma.module.update({
       where: { id: moduleId },
-      data: { title }
+      data: { 
+        title,
+        description: description || ""
+      }
     });
 
     return NextResponse.json(updatedModule);

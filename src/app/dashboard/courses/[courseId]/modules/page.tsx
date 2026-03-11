@@ -27,11 +27,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ModuleManagementPage({ params }: { params: Promise<{ courseId: string }> }) {
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
   const { toast } = useToast();
+  const router = useRouter();
   
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +45,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
   
   // Form States
   const [moduleTitle, setModuleTitle] = useState("");
+  const [moduleDescription, setModuleDescription] = useState("");
   const [selectedModule, setSelectedModule] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -72,7 +75,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courseId,
-          title: moduleTitle.trim()
+          title: moduleTitle.trim(),
+          description: moduleDescription.trim()
         })
       });
 
@@ -81,6 +85,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
       toast({ title: "Success", description: "Module created successfully" });
       setCreateOpen(false);
       setModuleTitle("");
+      setModuleDescription("");
+      router.refresh();
       window.location.reload();
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Could not create module" });
@@ -98,7 +104,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           moduleId: selectedModule.id,
-          title: moduleTitle.trim()
+          title: moduleTitle.trim(),
+          description: moduleDescription.trim()
         })
       });
 
@@ -108,6 +115,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
       setEditOpen(false);
       setSelectedModule(null);
       setModuleTitle("");
+      setModuleDescription("");
+      router.refresh();
       window.location.reload();
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Could not update module" });
@@ -131,6 +140,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
       toast({ title: "Success", description: "Module deleted successfully" });
       setDeleteOpen(false);
       setSelectedModule(null);
+      router.refresh();
       window.location.reload();
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Could not delete module" });
@@ -158,6 +168,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
         </Link>
         <Button onClick={() => {
           setModuleTitle("");
+          setModuleDescription("");
           setCreateOpen(true);
         }} className="gap-2">
           <PlusCircle className="h-4 w-4" />
@@ -185,15 +196,20 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
             </Card>
           ) : (
             modules.map((module, index) => (
-              <Card key={module.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-8 h-8 rounded bg-primary/10 text-primary font-bold text-xs">
+              <Card key={module.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center justify-center w-10 h-10 rounded bg-primary/10 text-primary font-bold text-sm">
                       {index + 1}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold">{module.title}</span>
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-bold text-lg">{module.title}</span>
+                      {module.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-1 max-w-xl">
+                          {module.description}
+                        </p>
+                      )}
+                      <span className="text-xs text-primary/80 font-medium">
                         {module._count?.lessons || 0} Lessons • Order: {module.order}
                       </span>
                     </div>
@@ -202,10 +218,11 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-8 w-8 p-0"
+                      className="h-9 w-9 p-0"
                       onClick={() => {
                         setSelectedModule(module);
                         setModuleTitle(module.title);
+                        setModuleDescription(module.description || "");
                         setEditOpen(true);
                       }}
                     >
@@ -214,7 +231,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-8 w-8 p-0 text-destructive"
+                      className="h-9 w-9 p-0 text-destructive"
                       onClick={() => {
                         setSelectedModule(module);
                         setDeleteOpen(true);
@@ -249,6 +266,16 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                 onChange={(e) => setModuleTitle(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Module Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="What will students learn in this module?" 
+                value={moduleDescription}
+                onChange={(e) => setModuleDescription(e.target.value)}
+                className="min-h-[100px] resize-none"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
@@ -266,7 +293,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
           <DialogHeader>
             <DialogTitle>Edit Module</DialogTitle>
             <DialogDescription>
-              Update the title of your module.
+              Update the details of your module.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -276,6 +303,15 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                 id="edit-title" 
                 value={moduleTitle}
                 onChange={(e) => setModuleTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Module Description</Label>
+              <Textarea 
+                id="edit-description" 
+                value={moduleDescription}
+                onChange={(e) => setModuleDescription(e.target.value)}
+                className="min-h-[100px] resize-none"
               />
             </div>
           </div>
