@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
@@ -9,14 +10,28 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import PostCard from '@/components/post-card';
+import Link from 'next/link';
 import {
   Book,
-  Info,
-  Trophy,
   Users,
   MessageSquare,
   Image as ImageIcon,
 } from 'lucide-react';
+import { cookies } from 'next/headers';
+import * as jose from 'jose';
+
+async function getCurrentUserId() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  if (!token) return null;
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
+    const { payload } = await jose.jwtVerify(token, secret);
+    return payload.userId as string;
+  } catch (error) {
+    return null;
+  }
+}
 
 async function getCommunity(id: string) {
     const community = await prisma.community.findUnique({
@@ -42,14 +57,17 @@ async function getTopContributors(communityId: string) {
 
 export default async function CommunityDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const community = await getCommunity(id);
+  const [community, currentUserId] = await Promise.all([
+    getCommunity(id),
+    getCurrentUserId()
+  ]);
 
   if (!community) {
     notFound();
   }
 
   const topContributors = await getTopContributors(id);
-  const loggedInUser = await prisma.user.findFirst();
+  const loggedInUser = currentUserId ? await prisma.user.findUnique({ where: { id: currentUserId } }) : null;
 
   return (
     <div className="space-y-6 sm:space-y-10">
@@ -74,45 +92,19 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                 {community.description}
               </p>
             </div>
-            <Button size="lg" variant="secondary" className="w-full sm:w-auto font-bold border bg-muted text-foreground hover:bg-muted/80 shadow-lg">
-              Join Community
-            </Button>
+            <div className="flex gap-3">
+              <Button asChild size="lg" variant="secondary" className="font-bold border bg-muted text-foreground hover:bg-muted/80 shadow-lg">
+                 <Link href={`/communities/${community.id}/posts`}>View Discussions</Link>
+              </Button>
+              <Button size="lg" className="font-bold shadow-lg">
+                Join Community
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Mobile Tabs Controller (Only visible on mobile) */}
-        <div className="lg:hidden col-span-1">
-          <Tabs defaultValue="feed" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-12">
-              <TabsTrigger value="feed" className="gap-2">
-                <MessageSquare className="h-4 w-4" /> Feed
-              </TabsTrigger>
-              <TabsTrigger value="about" className="gap-2">
-                <Info className="h-4 w-4" /> About
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="gap-2">
-                <Users className="h-4 w-4" /> Stats
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="feed" className="mt-6 space-y-6">
-              <CreatePostCard user={loggedInUser} />
-              <Feed posts={community.posts} />
-            </TabsContent>
-            
-            <TabsContent value="about" className="mt-6 space-y-6">
-              <AboutSection contributors={topContributors} />
-            </TabsContent>
-
-            <TabsContent value="stats" className="mt-6 space-y-6">
-              <StatsCard community={community} />
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Desktop Sidebars (Hidden on mobile) */}
         <aside className="hidden lg:block lg:col-span-3 space-y-1">
           <div className="sticky top-24">
             <Card>
@@ -121,17 +113,18 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
               </CardHeader>
               <CardContent>
                 <nav className="flex flex-col space-y-1">
-                  <Button variant="ghost" className="justify-start px-2 font-medium">
-                    <MessageSquare className="mr-3 h-4 w-4 text-primary" /> Feed
+                  <Button variant="ghost" asChild className="justify-start px-2 font-medium">
+                    <Link href={`/communities/${community.id}`}>
+                      <MessageSquare className="mr-3 h-4 w-4 text-primary" /> Feed
+                    </Link>
                   </Button>
-                  <Button variant="ghost" className="justify-start px-2">
-                    <Info className="mr-3 h-4 w-4" /> About
+                  <Button variant="ghost" asChild className="justify-start px-2">
+                    <Link href={`/communities/${community.id}/posts`}>
+                      <Book className="mr-3 h-4 w-4" /> Discussion Board
+                    </Link>
                   </Button>
                   <Button variant="ghost" className="justify-start px-2">
                     <Users className="mr-3 h-4 w-4" /> Members
-                  </Button>
-                  <Button variant="ghost" className="justify-start px-2">
-                    <Trophy className="mr-3 h-4 w-4" /> Leaderboard
                   </Button>
                 </nav>
               </CardContent>
@@ -139,132 +132,89 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
           </div>
         </aside>
 
-        {/* Main Feed (Desktop) */}
-        <main className="hidden lg:block lg:col-span-6 space-y-6">
-          <CreatePostCard user={loggedInUser} />
-          <Feed posts={community.posts} />
+        <main className="lg:col-span-6 space-y-6">
+          <Card className="border-primary/10 shadow-sm overflow-hidden">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start gap-4">
+                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary/10">
+                  <AvatarImage src={`https://picsum.photos/seed/${currentUserId}/100/100`} />
+                  <AvatarFallback>{loggedInUser?.name?.charAt(0) || '?'}</AvatarFallback>
+                </Avatar>
+                <div className="w-full space-y-3">
+                  <Textarea 
+                    placeholder="What's on your mind?" 
+                    className="min-h-[100px] sm:min-h-[120px] resize-none border-none focus-visible:ring-0 text-base"
+                  />
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground h-8">
+                        <ImageIcon className="h-4 w-4 mr-2" /> Photo
+                      </Button>
+                    </div>
+                    <Button size="sm" className="px-6">Post</Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            {community.posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
         </main>
 
-        {/* Desktop Stats (Hidden on mobile) */}
         <aside className="hidden lg:block lg:col-span-3 space-y-6">
           <div className="sticky top-24 space-y-6">
-            <StatsCard community={community} />
-            <ContributorsCard contributors={topContributors} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Community Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total Members</span>
+                  <span className="font-bold">{community.memberCount.toLocaleString()}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Active Now</span>
+                  <span className="font-bold flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    {Math.floor(community.memberCount / 15).toLocaleString()}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Category</span>
+                  <span className="font-bold text-primary">{community.category}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Top Contributors</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {topContributors.map((user) => (
+                  <div key={user.id} className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 border">
+                      <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} />
+                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <p className="text-sm font-bold truncate max-w-[120px]">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.title}</p>
+                    </div>
+                    <Badge variant="secondary" className="ml-auto text-[10px] h-5">Top</Badge>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         </aside>
       </div>
     </div>
-  );
-}
-
-function CreatePostCard({ user }: { user: any }) {
-  return (
-    <Card className="border-primary/10 shadow-sm overflow-hidden">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex items-start gap-4">
-          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary/10">
-            <AvatarImage src={"https://picsum.photos/seed/user1/100/100"} />
-            <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="w-full space-y-3">
-            <Textarea 
-              placeholder="What's on your mind?" 
-              className="min-h-[100px] sm:min-h-[120px] resize-none border-none focus-visible:ring-0 text-base"
-            />
-            <div className="flex justify-between items-center pt-2 border-t">
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" className="text-muted-foreground h-8">
-                  <ImageIcon className="h-4 w-4 mr-2" /> Photo
-                </Button>
-              </div>
-              <Button size="sm" className="px-6">Post</Button>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function Feed({ posts }: { posts: any[] }) {
-  return (
-    <div className="space-y-6">
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
-    </div>
-  );
-}
-
-function AboutSection({ contributors }: { contributors: any[] }) {
-  return (
-    <div className="space-y-6">
-       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">About this Community</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Welcome to our professional learning community. Here we share knowledge, 
-            ask questions, and grow together through collaborative efforts.
-          </p>
-        </CardContent>
-      </Card>
-      <ContributorsCard contributors={contributors} />
-    </div>
-  );
-}
-
-function StatsCard({ community }: { community: any }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Community Stats</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Total Members</span>
-          <span className="font-bold">{community.memberCount.toLocaleString()}</span>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Active Now</span>
-          <span className="font-bold flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            {Math.floor(community.memberCount / 15).toLocaleString()}
-          </span>
-        </div>
-        <Separator />
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Category</span>
-          <span className="font-bold text-primary">{community.category}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ContributorsCard({ contributors }: { contributors: any[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Top Contributors</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {contributors.map((user) => (
-          <div key={user.id} className="flex items-center gap-3">
-            <Avatar className="h-9 w-9 border">
-              <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <p className="text-sm font-bold truncate max-w-[120px]">{user.name}</p>
-              <p className="text-xs text-muted-foreground">{user.title}</p>
-            </div>
-            <Badge variant="secondary" className="ml-auto text-[10px] h-5">Top</Badge>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
   );
 }
