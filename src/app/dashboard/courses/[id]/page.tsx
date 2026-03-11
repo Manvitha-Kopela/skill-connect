@@ -43,7 +43,7 @@ export default async function CourseEditorPage({
   const courseId = resolvedParams.id;
 
   if (!courseId) {
-    throw new Error("Course ID is missing from route params");
+    throw new Error("Course ID missing from route");
   }
 
   const user = await getCurrentUser();
@@ -66,7 +66,7 @@ export default async function CourseEditorPage({
   });
 
   if (!course) {
-    notFound();
+    throw new Error("Course not found");
   }
 
   if (course.instructorId !== user.userId) {
