@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -9,7 +8,6 @@ import {
   Play, 
   Clock, 
   Video, 
-  PlusCircle, 
   Pencil, 
   Trash, 
   Loader2,
@@ -75,25 +73,19 @@ export default function LessonsPage({
     fetchCourseData();
   }, [courseId]);
 
-  const deleteLesson = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this lesson?")) return;
+  async function deleteLesson(id: string) {
+    const res = await fetch(`/api/lessons/${id}`, {
+      method: "DELETE"
+    });
 
-    try {
-      const res = await fetch(`/api/lessons/${id}`, {
-        method: "DELETE"
-      });
-
-      if (res.ok) {
-        toast({ title: "Lesson Deleted", description: "The lesson has been removed." });
-        fetchCourseData();
-        router.refresh();
-      } else {
-        throw new Error("Failed to delete lesson");
-      }
-    } catch (error) {
+    if (res.ok) {
+      toast({ title: "Lesson Deleted", description: "The lesson has been removed." });
+      fetchCourseData();
+      router.refresh();
+    } else {
       toast({ variant: "destructive", title: "Error", description: "Could not delete lesson." });
     }
-  };
+  }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,29 +248,18 @@ export default function LessonsPage({
       </div>
 
       {/* Video Player Dialog */}
-      <Dialog open={selectedLesson !== null} onOpenChange={() => setSelectedLesson(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
-          <DialogHeader className="p-4 bg-background border-b">
-            <DialogTitle>{selectedLesson?.title}</DialogTitle>
-            <DialogDescription>{selectedLesson?.description}</DialogDescription>
-          </DialogHeader>
-          <div className="aspect-video w-full flex items-center justify-center bg-black">
-            {selectedLesson?.videoUrl ? (
-              <video
-                controls
-                className="w-full h-full"
-                src={selectedLesson.videoUrl}
-                autoPlay
-              />
-            ) : (
-              <div className="text-white flex flex-col items-center gap-4">
-                <Video className="h-12 w-12 opacity-20" />
-                <p>No video file found for this lesson.</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {selectedLesson && (
+        <Dialog open onOpenChange={() => setSelectedLesson(null)}>
+          <DialogContent className="max-w-3xl">
+            <video
+              src={selectedLesson.videoUrl}
+              controls
+              className="w-full rounded-lg"
+              autoPlay
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Lesson Dialog */}
       <Dialog open={editingLesson !== null} onOpenChange={() => setEditingLesson(null)}>
