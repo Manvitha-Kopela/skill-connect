@@ -5,6 +5,20 @@ export async function GET() {
   try {
     const communities = await prisma.community.findMany({
       include: {
+        posts: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
         members: {
           include: {
             user: {
@@ -22,12 +36,10 @@ export async function GET() {
       }
     });
     
-    // Returning raw array as expected by the existing frontend logic in src/app/communities/page.tsx
     return NextResponse.json(communities || []);
   } catch (error: any) {
     console.error('Error in /api/communities:', error);
 
-    // Detect if table is missing
     if (error.code === 'P2021') {
       return NextResponse.json({ 
         message: 'Database tables are missing. Please run "npx prisma db push".',
