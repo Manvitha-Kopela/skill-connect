@@ -59,7 +59,7 @@ model Module {
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons     Lesson[]
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Lesson {
@@ -72,7 +72,7 @@ model Lesson {
   moduleId    String
   module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Enrollment {
