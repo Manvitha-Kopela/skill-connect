@@ -10,19 +10,11 @@ datasource db {
 enum Role {
   LEARNER
   CREATOR
-  ADMIN
 }
 
 enum TransactionType {
   EARN
   SPEND
-}
-
-enum SkillSwapStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  COMPLETED
 }
 
 model User {
@@ -33,124 +25,99 @@ model User {
   role             Role              @default(LEARNER)
   coinBalance      Int               @default(100)
   streak           Int               @default(0)
-  avatarUrl        String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  
-  // Relations
+  courses          Course[]          @relation("CourseInstructor")
   enrollments      Enrollment[]
-  createdCourses   Course[]          @relation("CreatedCourses")
-  communityMemberships CommunityMember[]
+  transactions     CoinTransaction[]
+  communityMembers CommunityMember[]
   posts            Post[]
-  comments         Comment[]
-  coinTransactions CoinTransaction[]
-  quizAttempts     QuizAttempt[]
-  badges           Badge[]
-  
-  // Skill Swap
-  sentRequests     SkillSwapRequest[] @relation("SentRequests")
-  receivedRequests SkillSwapRequest[] @relation("ReceivedRequests")
-  teachingSessions SkillSwapSession[] @relation("TeachingSessions")
-  learningSessions SkillSwapSession[] @relation("LearningSessions")
 }
 
 model Course {
   id            String       @id @default(cuid())
   title         String
-  description   String       @db.Text
+  description   String
   thumbnailUrl  String
-  priceInCoins  Int          @default(0)
-  level         String       @default("Beginner")
-  language      String       @default("English")
+  priceInCoins  Int
+  level         String
+  language      String
   instructorId  String
-  instructor    User         @relation("CreatedCourses", fields: [instructorId], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  
+  instructor    User         @relation("CourseInstructor", fields: [instructorId], references: [id])
   modules       Module[]
   enrollments   Enrollment[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model Module {
-  id        String   @id @default(cuid())
-  title     String
-  order     Int
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons   Lesson[]
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  order       Int
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Lesson {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?  @db.Text
-  videoUrl  String?
-  duration  String?
-  order     Int
-  moduleId  String
-  module    Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  videoUrl    String?
+  duration    String?
+  order       Int
+  moduleId    String
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Enrollment {
-  id        String   @id @default(cuid())
   userId    String
   courseId  String
   progress  Int      @default(0)
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+  course    Course   @relation(fields: [courseId], references: [id])
 
-  @@unique([userId, courseId])
+  @@id([userId, courseId])
 }
 
 model Community {
   id           String            @id @default(cuid())
   name         String
-  description  String            @db.Text
+  description  String
   category     String
   thumbnailUrl String
   memberCount  Int               @default(0)
   createdAt    DateTime          @default(now())
-  
+  updatedAt    DateTime          @updatedAt
   members      CommunityMember[]
   posts        Post[]
 }
 
 model CommunityMember {
-  id          String    @id @default(cuid())
   userId      String
   communityId String
-  joinedAt    DateTime  @default(now())
-  
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  community   Community @relation(fields: [communityId], references: [id])
 
-  @@unique([userId, communityId])
+  @@id([userId, communityId])
 }
 
 model Post {
   id          String    @id @default(cuid())
-  content     String    @db.Text
+  content     String
   authorId    String
   communityId String
   likes       Int       @default(0)
   createdAt   DateTime  @default(now())
-  
-  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
-  comments    Comment[]
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  content   String   @db.Text
-  postId    String
-  authorId  String
-  createdAt DateTime @default(now())
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author      User      @relation(fields: [authorId], references: [id])
+  community   Community @relation(fields: [communityId], references: [id])
 }
 
 model CoinTransaction {
@@ -160,62 +127,5 @@ model CoinTransaction {
   type      TransactionType
   reason    String
   createdAt DateTime        @default(now())
-  
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Quiz {
-  id        String        @id @default(cuid())
-  title     String
-  questions Json
-  reward    Int           @default(25)
-  attempts  QuizAttempt[]
-}
-
-model QuizAttempt {
-  id        String   @id @default(cuid())
-  userId    String
-  quizId    String
-  score     Int
-  passed    Boolean
-  createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-}
-
-model Badge {
-  id          String   @id @default(cuid())
-  name        String
-  description String
-  imageUrl    String
-  userId      String
-  unlockedAt  DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model SkillSwapRequest {
-  id             String          @id @default(cuid())
-  senderId       String
-  receiverId     String
-  requestedSkill String
-  offeredSkill   String
-  status         SkillSwapStatus @default(PENDING)
-  createdAt      DateTime        @default(now())
-  
-  sender         User            @relation("SentRequests", fields: [senderId], references: [id])
-  receiver       User            @relation("ReceivedRequests", fields: [receiverId], references: [id])
-}
-
-model SkillSwapSession {
-  id            String   @id @default(cuid())
-  teacherId     String
-  learnerId     String
-  topic         String
-  completedAt   DateTime @default(now())
-  coinsEarned   Int      @default(50)
-  
-  teacher       User     @relation("TeachingSessions", fields: [teacherId], references: [id])
-  learner       User     @relation("LearningSessions", fields: [learnerId], references: [id])
+  user      User            @relation(fields: [userId], references: [id])
 }
