@@ -16,7 +16,9 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
   
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [creatingFirstModule, setCreatingFirstModule] = useState(false);
+  const [addingModule, setAddingModule] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchModules() {
@@ -35,15 +37,20 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
     fetchModules();
   }, [courseId]);
 
-  async function createModule() {
-    setCreating(true);
+  async function handleCreateModule(isFirst: boolean = false) {
+    const title = window.prompt("Enter module title:");
+    if (!title || title.trim() === "") return;
+
+    if (isFirst) setCreatingFirstModule(true);
+    else setAddingModule(true);
+
     try {
       const res = await fetch("/api/modules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           courseId: courseId,
-          title: "New Module"
+          title: title.trim()
         })
       });
 
@@ -61,7 +68,6 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
         description: "Module created successfully"
       });
       
-      // Refresh the page data
       window.location.reload();
     } catch (error) {
       console.error(error);
@@ -71,7 +77,88 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
         description: "An unexpected error occurred"
       });
     } finally {
-      setCreating(false);
+      if (isFirst) setCreatingFirstModule(false);
+      else setAddingModule(false);
+    }
+  }
+
+  async function handleEditModule(moduleId: string, currentTitle: string) {
+    const newTitle = window.prompt("Edit module title:", currentTitle);
+    if (!newTitle || newTitle.trim() === "" || newTitle === currentTitle) return;
+
+    setProcessingId(moduleId);
+    try {
+      const res = await fetch("/api/modules", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          moduleId,
+          title: newTitle.trim()
+        })
+      });
+
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update module"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Module updated successfully"
+      });
+      
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleDeleteModule(moduleId: string) {
+    if (!window.confirm("Are you sure you want to delete this module? This action cannot be undone.")) return;
+
+    setProcessingId(moduleId);
+    try {
+      const res = await fetch("/api/modules", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId })
+      });
+
+      if (!res.ok) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete module"
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Module deleted successfully"
+      });
+      
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred"
+      });
+    } finally {
+      setProcessingId(null);
     }
   }
 
@@ -92,8 +179,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Editor
         </Link>
-        <Button onClick={createModule} disabled={creating} className="gap-2">
-          {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+        <Button onClick={() => handleCreateModule(false)} disabled={addingModule} className="gap-2">
+          {addingModule ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
           Add New Module
         </Button>
       </div>
@@ -111,15 +198,15 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                 <Layers className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-bold">No modules yet</h3>
                 <p className="text-muted-foreground mb-6">Create your first module to start building the curriculum.</p>
-                <Button onClick={createModule} disabled={creating}>
-                  {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button onClick={() => handleCreateModule(true)} disabled={creatingFirstModule}>
+                  {creatingFirstModule && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create First Module
                 </Button>
               </CardContent>
             </Card>
           ) : (
             modules.map((module, index) => (
-              <Card key={module.id}>
+              <Card key={module.id} className={processingId === module.id ? "opacity-50 pointer-events-none" : ""}>
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center justify-center w-8 h-8 rounded bg-primary/10 text-primary font-bold text-xs">
@@ -133,12 +220,28 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {processingId === module.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0"
+                          onClick={() => handleEditModule(module.id, module.title)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-destructive"
+                          onClick={() => handleDeleteModule(module.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
