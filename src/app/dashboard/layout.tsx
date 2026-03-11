@@ -1,3 +1,4 @@
+'use client';
 
 import { ReactNode } from 'react';
 import { 
@@ -9,6 +10,7 @@ import {
   Home
 } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
@@ -24,6 +26,15 @@ const sidebarLinks = [
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-10rem)]">
       {/* Sidebar Navigation */}
@@ -37,9 +48,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-muted group"
+                className={cn(
+                  "flex items-center gap-3 py-2.5 text-sm font-medium transition-colors group",
+                  isActive(link.href)
+                    ? "bg-primary/10 text-primary font-semibold border-l-2 border-primary pl-3"
+                    : "px-4 rounded-lg text-muted-foreground hover:bg-muted"
+                )}
               >
-                <link.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                <link.icon className={cn(
+                  "h-4 w-4 transition-colors",
+                  isActive(link.href) ? "text-primary" : "text-muted-foreground group-hover:text-primary"
+                )} />
                 {link.label}
               </Link>
             ))}
