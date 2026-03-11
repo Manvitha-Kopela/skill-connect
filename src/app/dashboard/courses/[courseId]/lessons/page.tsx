@@ -1,53 +1,137 @@
-import prisma from "@/lib/prisma";
-import { cookies } from "next/headers";
-import * as jose from "jose";
-import { redirect } from "next/navigation";
+
+'use client';
+
+import { useState, useEffect, use } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Clock, Video, PlusCircle } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Play, 
+  Clock, 
+  Video, 
+  PlusCircle, 
+  Pencil, 
+  Trash, 
+  Loader2,
+  FileText
+} from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import AddLessonButton from "@/components/add-lesson-button";
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/hooks/use-user';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-export default async function LessonsPage({
+export default function LessonsPage({
   params,
 }: {
-  params: { courseId: string };
+  params: Promise<{ courseId: string }>;
 }) {
-  const courseId = params.courseId;
+  const resolvedParams = use(params);
+  const courseId = resolvedParams.courseId;
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useUser();
 
-  // Auth check
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-  if (!token) redirect("/login");
+  const [course, setCourse] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [editingLesson, setEditingLesson] = useState<any>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  let userId: string;
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key");
-    const { payload } = await jose.jwtVerify(token, secret);
-    userId = payload.userId as string;
-  } catch (error) {
-    redirect("/login");
+  // Form states for editing
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+
+  const fetchCourseData = async () => {
+    try {
+      const res = await fetch('/api/courses');
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const found = data.courses.find((c: any) => c.id === courseId);
+        if (found) {
+          setCourse(found);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch course", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourseData();
+  }, [courseId]);
+
+  const deleteLesson = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this lesson?")) return;
+
+    try {
+      const res = await fetch(`/api/lessons/${id}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        toast({ title: "Lesson Deleted", description: "The lesson has been removed." });
+        fetchCourseData();
+        router.refresh();
+      } else {
+        throw new Error("Failed to delete lesson");
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Could not delete lesson." });
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLesson || !editTitle.trim()) return;
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/lessons/${editingLesson.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim()
+        })
+      });
+
+      if (res.ok) {
+        toast({ title: "Lesson Updated", description: "Changes saved successfully." });
+        setEditingLesson(null);
+        fetchCourseData();
+        router.refresh();
+      } else {
+        throw new Error("Update failed");
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Could not update lesson." });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-
-  // Fetch course safely with Prisma
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    include: {
-      modules: {
-        include: {
-          lessons: {
-            orderBy: {
-              order: "asc",
-            },
-          },
-        },
-        orderBy: {
-          order: "asc",
-        },
-      },
-    },
-  });
 
   if (!course) {
     return (
@@ -58,11 +142,6 @@ export default async function LessonsPage({
         </Button>
       </div>
     );
-  }
-
-  // Ownership check
-  if (course.instructorId !== userId) {
-    redirect("/dashboard/courses");
   }
 
   return (
@@ -94,7 +173,7 @@ export default async function LessonsPage({
             </CardContent>
           </Card>
         ) : (
-          course.modules.map((module) => (
+          course.modules.map((module: any) => (
             <div key={module.id} className="space-y-4">
               <div className="flex items-center justify-between px-2">
                 <div className="flex flex-col gap-1">
@@ -110,8 +189,12 @@ export default async function LessonsPage({
               </div>
               <div className="grid gap-3">
                 {module.lessons && module.lessons.length > 0 ? (
-                  module.lessons.map((lesson) => (
-                    <Card key={lesson.id} className="group hover:border-primary/50 transition-colors">
+                  module.lessons.map((lesson: any) => (
+                    <Card 
+                      key={lesson.id} 
+                      className="group hover:border-primary/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedLesson(lesson)}
+                    >
                       <CardContent className="p-5 flex items-center justify-between">
                         <div className="flex items-center gap-5">
                           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/5 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
@@ -134,6 +217,30 @@ export default async function LessonsPage({
                             </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingLesson(lesson);
+                              setEditTitle(lesson.title);
+                              setEditDescription(lesson.description || "");
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteLesson(lesson.id);
+                            }}
+                          >
+                            <Trash className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))
@@ -147,6 +254,84 @@ export default async function LessonsPage({
           ))
         )}
       </div>
+
+      {/* Video Player Dialog */}
+      <Dialog open={selectedLesson !== null} onOpenChange={() => setSelectedLesson(null)}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black">
+          <DialogHeader className="p-4 bg-background border-b">
+            <DialogTitle>{selectedLesson?.title}</DialogTitle>
+            <DialogDescription>{selectedLesson?.description}</DialogDescription>
+          </DialogHeader>
+          <div className="aspect-video w-full flex items-center justify-center bg-black">
+            {selectedLesson?.videoUrl ? (
+              <video
+                controls
+                className="w-full h-full"
+                src={selectedLesson.videoUrl}
+                autoPlay
+              />
+            ) : (
+              <div className="text-white flex flex-col items-center gap-4">
+                <Video className="h-12 w-12 opacity-20" />
+                <p>No video file found for this lesson.</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Lesson Dialog */}
+      <Dialog open={editingLesson !== null} onOpenChange={() => setEditingLesson(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Lesson</DialogTitle>
+            <DialogDescription>Update the lesson details below.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-6 py-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-lesson-title" className="flex items-center gap-2 text-sm font-bold">
+                  <FileText className="h-4 w-4 text-primary" /> Lesson Title
+                </Label>
+                <Input
+                  id="edit-lesson-title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  required
+                  disabled={isUpdating}
+                  className="h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-lesson-description" className="text-sm font-bold">Description</Label>
+                <Textarea
+                  id="edit-lesson-description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="min-h-[100px] resize-none"
+                  disabled={isUpdating}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setEditingLesson(null)} disabled={isUpdating} className="font-bold">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isUpdating || !editTitle.trim()} className="min-w-[120px] font-bold">
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
