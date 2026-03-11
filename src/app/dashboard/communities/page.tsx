@@ -3,9 +3,9 @@ import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, MessageSquare, Settings, ArrowRight } from 'lucide-react';
+import { Users, Plus, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -30,7 +30,7 @@ export default async function MyCommunitiesDashboard() {
     where: {
       members: {
         some: {
-          userId: user.userId,
+          userId: user.userId as string,
         }
       }
     },

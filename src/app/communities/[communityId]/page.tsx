@@ -13,12 +13,9 @@ import PostCard from '@/components/post-card';
 import Link from 'next/link';
 import {
   Book,
-  Info,
-  Trophy,
   Users,
   MessageSquare,
   Image as ImageIcon,
-  LayoutDashboard,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
@@ -128,9 +125,6 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                   </Button>
                   <Button variant="ghost" className="justify-start px-2">
                     <Users className="mr-3 h-4 w-4" /> Members
-                  </Button>
-                  <Button variant="ghost" className="justify-start px-2">
-                    <Trophy className="mr-3 h-4 w-4" /> Leaderboard
                   </Button>
                 </nav>
               </CardContent>

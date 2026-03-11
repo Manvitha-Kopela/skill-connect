@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, 
-  Settings, 
   Shield, 
   Users, 
   MessageSquare, 
@@ -44,9 +43,6 @@ export default async function CommunityManagementPage({ params }: { params: Prom
   });
 
   if (!community) notFound();
-
-  // In this MVP, we consider any member as "manager" for demo, or you can check creatorId if it exists in schema
-  // For now let's just display stats and settings buttons
 
   return (
     <div className="space-y-8">
