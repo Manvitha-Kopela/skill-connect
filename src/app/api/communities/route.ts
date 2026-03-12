@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const communities = await prisma.community.findMany({
       include: {
-        posts: {
+        discussions: {
           include: {
             author: {
               select: {
@@ -14,7 +14,10 @@ export async function GET() {
                 email: true
               }
             },
-            comments: true
+            comments: true,
+            _count: {
+              select: { comments: true }
+            }
           },
           orderBy: {
             createdAt: 'desc'

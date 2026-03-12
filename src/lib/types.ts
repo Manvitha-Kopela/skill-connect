@@ -11,10 +11,22 @@ export type Course = Prisma.CourseGetPayload<{
     }
   }
 }>;
-export type Community = Prisma.CommunityGetPayload<{}>;
-export type Post = Prisma.PostGetPayload<{
+export type Community = Prisma.CommunityGetPayload<{
+  include: {
+    discussions: {
+      include: {
+        author: true,
+        comments: true
+      }
+    }
+  }
+}>;
+export type Discussion = Prisma.DiscussionGetPayload<{
   include: {
     author: true,
-    comments: true
+    comments: true,
+    _count: {
+      select: { comments: true }
+    }
   }
 }>;

@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import PostCard from '@/components/post-card';
@@ -13,7 +12,6 @@ import {
   Book,
   Users,
   MessageSquare,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
@@ -36,7 +34,7 @@ async function getCommunity(id: string) {
     const community = await prisma.community.findUnique({
         where: { id },
         include: {
-            posts: {
+            discussions: {
                 include: {
                     author: true,
                     _count: {
@@ -135,35 +133,17 @@ export default async function CommunityDetailPage({ params }: { params: { commun
         </aside>
 
         <main className="lg:col-span-6 space-y-6">
-          <Card className="border-primary/10 shadow-sm overflow-hidden">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-primary/10">
-                  <AvatarImage src={`https://picsum.photos/seed/${currentUserId}/100/100`} />
-                  <AvatarFallback>{loggedInUser?.name?.charAt(0) || '?'}</AvatarFallback>
-                </Avatar>
-                <div className="w-full space-y-3">
-                  <Textarea 
-                    placeholder="What's on your mind?" 
-                    className="min-h-[100px] sm:min-h-[120px] resize-none border-none focus-visible:ring-0 text-base"
-                  />
-                  <div className="flex justify-between items-center pt-2 border-t">
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" className="text-muted-foreground h-8">
-                        <ImageIcon className="h-4 w-4 mr-2" /> Photo
-                      </Button>
-                    </div>
-                    <Button size="sm" className="px-6">Post</Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="space-y-6">
-            {community.posts.map((post) => (
-              <PostCard key={post.id} post={post as any} />
+            {community.discussions.map((discussion) => (
+              <PostCard key={discussion.id} post={discussion as any} />
             ))}
+            {community.discussions.length === 0 && (
+              <Card className="border-dashed bg-muted/20">
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  No activity yet. Start the conversation!
+                </CardContent>
+              </Card>
+            )}
           </div>
         </main>
 

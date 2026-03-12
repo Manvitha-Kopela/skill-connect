@@ -147,13 +147,13 @@ export default function CommunityDiscussionPage({ params }: { params: Promise<{ 
         </div>
 
         <div className="grid gap-6">
-          {!community.posts || community.posts.length === 0 ? (
+          {!community.discussions || community.discussions.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed rounded-xl bg-muted/20">
               <p className="text-muted-foreground">No discussions started yet. Be the first to post!</p>
             </div>
           ) : (
-            community.posts.map((post: any) => (
-              <PostCard key={post.id} post={post} />
+            community.discussions.map((discussion: any) => (
+              <PostCard key={discussion.id} post={discussion} />
             ))
           )}
         </div>

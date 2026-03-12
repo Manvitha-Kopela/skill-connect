@@ -18,19 +18,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Content and Community ID are required' }, { status: 400 });
     }
 
-    // Since the system uses the 'Post' model, we'll format the title into the content 
-    // to maintain the "Discussion" feel without changing the DB schema.
-    const postContent = title ? `### ${title}\n\n${content}` : content;
+    // Since the system uses the 'Discussion' model
+    const discussionContent = title ? `### ${title}\n\n${content}` : content;
 
-    const post = await prisma.post.create({
+    const discussion = await prisma.discussion.create({
       data: {
-        content: postContent,
+        content: discussionContent,
         communityId: communityId,
         authorId: decoded.userId
       }
     })
 
-    return NextResponse.json(post, { status: 201 });
+    return NextResponse.json(discussion, { status: 201 });
   } catch (error: any) {
     console.error('Discussion creation error:', error);
     return NextResponse.json({ message: 'Internal Server Error', error: error.message }, { status: 500 });
