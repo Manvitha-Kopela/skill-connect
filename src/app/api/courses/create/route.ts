@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
-import { z } from 'zoc';
+import { z } from 'zod';
 
 const courseCreateSchema = z.object({
   title: z.string().min(5),
