@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
-import { z } from 'zod';
+import { z } from 'zoc';
 
 const courseCreateSchema = z.object({
   title: z.string().min(5),
@@ -16,15 +16,39 @@ export async function POST(req: NextRequest) {
   const token = req.cookies.get('token')?.value;
 
   if (!token) {
-    return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Authentication required' 
+    }, { status: 401 });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
     const body = await req.json();
-    const validatedData = courseCreateSchema.parse(body);
+    
+    const parseResult = courseCreateSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid input data', 
+        errors: parseResult.error.flatten().fieldErrors 
+      }, { status: 400 });
+    }
 
+    const validatedData = parseResult.data;
     const rewardAmount = 50;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'User account not found' 
+      }, { status: 404 });
+    }
 
     const result = await prisma.$transaction([
       prisma.course.create({
@@ -52,15 +76,23 @@ export async function POST(req: NextRequest) {
     ]);
 
     return NextResponse.json({ 
+      success: true,
       message: 'Course created and reward earned!', 
       course: result[0],
       newBalance: result[1].coinBalance 
     });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ message: 'Invalid input', errors: error.errors }, { status: 400 });
+    console.error('Course creation error detail:', error);
+    
+    let errorMessage = 'Internal Server Error during course creation';
+    if (error.name === 'JsonWebTokenError') {
+      errorMessage = 'Invalid authentication token';
+      return NextResponse.json({ success: false, message: errorMessage }, { status: 401 });
     }
-    console.error('Course creation error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+
+    return NextResponse.json({ 
+      success: false, 
+      message: error.message || errorMessage 
+    }, { status: 500 });
   }
 }

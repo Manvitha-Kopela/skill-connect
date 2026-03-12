@@ -76,7 +76,7 @@ export default function CreateCoursePage() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (data.success) {
         toast({
           title: 'Course created successfully',
           description: `You earned 50 bonus coins! New balance: ${data.newBalance}`,
@@ -84,14 +84,18 @@ export default function CreateCoursePage() {
         router.push('/dashboard');
         router.refresh();
       } else {
-        throw new Error(data.message || 'Failed to create course');
+        toast({
+          variant: 'destructive',
+          title: 'Creation Failed',
+          description: data.message || 'Failed to create course. Please check your inputs.',
+        });
       }
     } catch (error: any) {
-      console.error(error);
+      console.error("Course creation submission error:", error);
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to create course',
+        title: 'Network Error',
+        description: 'Could not connect to the server. Please check your connection and try again.',
       });
     } finally {
       setIsSubmitting(false);
