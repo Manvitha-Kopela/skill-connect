@@ -137,8 +137,10 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                       <Book className="mr-3 h-4 w-4" /> Discussion Board
                     </Link>
                   </Button>
-                  <Button variant="ghost" className="justify-start px-2">
-                    <Users className="mr-3 h-4 w-4" /> Members
+                  <Button variant="ghost" asChild className="justify-start px-2">
+                    <Link href={`/communities/${community.id}/members`}>
+                      <Users className="mr-3 h-4 w-4" /> Members
+                    </Link>
                   </Button>
                 </nav>
               </CardContent>
