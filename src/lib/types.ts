@@ -14,6 +14,7 @@ export type Course = Prisma.CourseGetPayload<{
 export type Community = Prisma.CommunityGetPayload<{}>;
 export type Post = Prisma.PostGetPayload<{
   include: {
-    author: true
+    author: true,
+    comments: true
   }
 }>;

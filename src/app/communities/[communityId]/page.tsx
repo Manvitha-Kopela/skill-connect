@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
@@ -7,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
 import PostCard from '@/components/post-card';
 import Link from 'next/link';
@@ -16,8 +14,6 @@ import {
   Users,
   MessageSquare,
   Image as ImageIcon,
-  Info,
-  Trophy
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
@@ -42,6 +38,7 @@ async function getCommunity(id: string) {
             posts: {
                 include: {
                     author: true,
+                    comments: true,
                 },
                 orderBy: {
                     createdAt: 'desc'

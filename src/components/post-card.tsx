@@ -1,4 +1,3 @@
-
 'use client';
 
 import { motion } from 'framer-motion';
@@ -23,7 +22,6 @@ export default function PostCard({ post }: PostCardProps) {
   };
 
   const handleLike = () => {
-    // In a real app, this would be an API call
     setIsLiked(!isLiked);
   };
 
@@ -33,7 +31,7 @@ export default function PostCard({ post }: PostCardProps) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-4">
             <Avatar>
-              <AvatarImage src={"https://picsum.photos/seed/user1/100/100"} />
+              <AvatarImage src={`https://picsum.photos/seed/${post.authorId}/100/100`} />
               <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
@@ -54,12 +52,12 @@ export default function PostCard({ post }: PostCardProps) {
           <motion.div whileTap={{ scale: 0.9 }}>
             <Button variant="ghost" size="sm" onClick={handleLike}>
               <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
-              {isLiked ? post.likes + 1 : post.likes}
+              {isLiked ? (post.likes || 0) + 1 : (post.likes || 0)}
             </Button>
           </motion.div>
           <Button variant="ghost" size="sm">
             <MessageSquare className="mr-2 h-4 w-4" />
-            {post.comments.length}
+            {post.comments?.length || 0}
           </Button>
         </CardFooter>
       </Card>

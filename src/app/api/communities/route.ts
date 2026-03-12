@@ -13,7 +13,8 @@ export async function GET() {
                 name: true,
                 email: true
               }
-            }
+            },
+            comments: true
           },
           orderBy: {
             createdAt: 'desc'
