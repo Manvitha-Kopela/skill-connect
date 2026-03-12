@@ -4,13 +4,25 @@ import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Post } from '@/lib/types';
 import { Heart, MessageSquare, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface PostCardProps {
-  post: Post;
+  post: {
+    id: string;
+    content: string;
+    authorId: string;
+    createdAt: string;
+    likes: number;
+    author: {
+      name: string;
+    };
+    comments?: any[];
+    _count?: {
+      comments: number;
+    };
+  };
 }
 
 export default function PostCard({ post }: PostCardProps) {
@@ -57,7 +69,7 @@ export default function PostCard({ post }: PostCardProps) {
           </motion.div>
           <Button variant="ghost" size="sm">
             <MessageSquare className="mr-2 h-4 w-4" />
-            {post.comments?.length || 0}
+            {post._count?.comments ?? post.comments?.length ?? 0}
           </Button>
         </CardFooter>
       </Card>

@@ -32,13 +32,16 @@ async function getCurrentUserId() {
 }
 
 async function getCommunity(id: string) {
+    if (!id) return null;
     const community = await prisma.community.findUnique({
         where: { id },
         include: {
             posts: {
                 include: {
                     author: true,
-                    comments: true,
+                    _count: {
+                      select: { comments: true }
+                    }
                 },
                 orderBy: {
                     createdAt: 'desc'
@@ -54,10 +57,10 @@ async function getTopContributors(communityId: string) {
     return users.map(user => ({...user, title: "Contributor"}));
 }
 
-export default async function CommunityDetailPage({ params }: { params: Promise<{ communityId: string }> }) {
-  const { communityId } = await params;
+export default async function CommunityDetailPage({ params }: { params: { communityId: string } }) {
+  const id = params.communityId;
   const [community, currentUserId] = await Promise.all([
-    getCommunity(communityId),
+    getCommunity(id),
     getCurrentUserId()
   ]);
 
@@ -65,7 +68,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
     notFound();
   }
 
-  const topContributors = await getTopContributors(communityId);
+  const topContributors = await getTopContributors(id);
   const loggedInUser = currentUserId ? await prisma.user.findUnique({ where: { id: currentUserId } }) : null;
 
   return (
@@ -159,7 +162,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
 
           <div className="space-y-6">
             {community.posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={post.id} post={post as any} />
             ))}
           </div>
         </main>
