@@ -15,6 +15,21 @@ import {
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
+import { Prisma } from '@prisma/client';
+
+// Define the precise type for Community including discussions and nested relations
+type CommunityWithDiscussions = Prisma.CommunityGetPayload<{
+  include: {
+    discussions: {
+      include: {
+        author: true;
+        _count: {
+          select: { comments: true };
+        };
+      };
+    };
+  };
+}>;
 
 async function getCurrentUserId() {
   const cookieStore = await cookies();
@@ -29,7 +44,7 @@ async function getCurrentUserId() {
   }
 }
 
-async function getCommunity(id: string) {
+async function getCommunity(id: string): Promise<CommunityWithDiscussions | null> {
     if (!id) return null;
     const community = await prisma.community.findUnique({
         where: { id },
@@ -46,7 +61,7 @@ async function getCommunity(id: string) {
                 }
             },
         }
-    });
+    }) as CommunityWithDiscussions | null;
     return community;
 }
 
@@ -55,10 +70,10 @@ async function getTopContributors(communityId: string) {
     return users.map(user => ({...user, title: "Contributor"}));
 }
 
-export default async function CommunityDetailPage({ params }: { params: { communityId: string } }) {
-  const id = params.communityId;
+export default async function CommunityDetailPage({ params }: { params: Promise<{ communityId: string }> }) {
+  const { communityId } = await params;
   const [community, currentUserId] = await Promise.all([
-    getCommunity(id),
+    getCommunity(communityId),
     getCurrentUserId()
   ]);
 
@@ -66,8 +81,7 @@ export default async function CommunityDetailPage({ params }: { params: { commun
     notFound();
   }
 
-  const topContributors = await getTopContributors(id);
-  const loggedInUser = currentUserId ? await prisma.user.findUnique({ where: { id: currentUserId } }) : null;
+  const topContributors = await getTopContributors(communityId);
 
   return (
     <div className="space-y-6 sm:space-y-10">
@@ -113,9 +127,9 @@ export default async function CommunityDetailPage({ params }: { params: { commun
               </CardHeader>
               <CardContent>
                 <nav className="flex flex-col space-y-1">
-                  <Button variant="ghost" asChild className="justify-start px-2 font-medium">
+                  <Button variant="ghost" asChild className="justify-start px-2 font-medium text-primary">
                     <Link href={`/communities/${community.id}`}>
-                      <MessageSquare className="mr-3 h-4 w-4 text-primary" /> Feed
+                      <MessageSquare className="mr-3 h-4 w-4" /> Feed
                     </Link>
                   </Button>
                   <Button variant="ghost" asChild className="justify-start px-2">
@@ -187,7 +201,7 @@ export default async function CommunityDetailPage({ params }: { params: { commun
                     </Avatar>
                     <div className="flex flex-col">
                       <p className="text-sm font-bold truncate max-w-[120px]">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">{user.title}</p>
+                      <p className="text-xs text-muted-foreground">Contributor</p>
                     </div>
                     <Badge variant="secondary" className="ml-auto text-[10px] h-5">Top</Badge>
                   </div>
