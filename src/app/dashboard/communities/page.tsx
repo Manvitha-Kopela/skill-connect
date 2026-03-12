@@ -1,4 +1,3 @@
-
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -36,7 +35,7 @@ export default async function MyCommunitiesDashboard() {
     },
     include: {
       _count: {
-        select: { members: true, posts: true }
+        select: { members: true, discussions: true }
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -97,7 +96,7 @@ export default async function MyCommunitiesDashboard() {
                    </div>
                    <div className="flex items-center gap-1.5">
                      <MessageSquare className="h-3.5 w-3.5" />
-                     {community._count.posts} Posts
+                     {community._count.discussions} Discussions
                    </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-2">

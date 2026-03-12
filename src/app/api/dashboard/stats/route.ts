@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         include: {
           community: {
             include: {
-              posts: {
+              discussions: {
                 orderBy: { createdAt: 'desc' },
                 take: 1
               }
@@ -73,8 +73,8 @@ export async function GET(req: NextRequest) {
         date: t.createdAt,
         type: 'transaction'
       })),
-      ...recentPosts.flatMap(cm => cm.community.posts.map(p => ({
-        text: `New post in ${cm.community.name}`,
+      ...recentPosts.flatMap(cm => cm.community.discussions.map(p => ({
+        text: `New discussion in ${cm.community.name}`,
         date: p.createdAt,
         type: 'post'
       })))
