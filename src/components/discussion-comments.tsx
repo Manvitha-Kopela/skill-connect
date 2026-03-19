@@ -121,34 +121,7 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
         </span>
       </div>
 
-      {user ? (
-        <div className="flex gap-4">
-          <Avatar>
-            <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-3">
-            <Textarea
-              placeholder="Add a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="min-h-[100px] resize-none"
-              disabled={submitting}
-            />
-            <div className="flex justify-end">
-              <Button onClick={handleSubmitComment} disabled={submitting || !newComment.trim()}>
-                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Post Comment
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-4 bg-muted rounded-lg text-center text-sm text-muted-foreground">
-          Please log in to participate in the discussion.
-        </div>
-      )}
-
+      {/* Comments List - Now appearing BEFORE input */}
       <div className="space-y-6">
         {comments.map((comment) => (
           <div key={comment.id} className="space-y-4">
@@ -228,6 +201,35 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
           </div>
         )}
       </div>
+
+      {/* Input Section - Now appearing AFTER list */}
+      {user ? (
+        <div className="flex gap-4 pt-4 border-t">
+          <Avatar>
+            <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} />
+            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-3">
+            <Textarea
+              placeholder="Add a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="min-h-[100px] resize-none"
+              disabled={submitting}
+            />
+            <div className="flex justify-end">
+              <Button onClick={handleSubmitComment} disabled={submitting || !newComment.trim()}>
+                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                Post Comment
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 bg-muted rounded-lg text-center text-sm text-muted-foreground mt-4">
+          Please log in to participate in the discussion.
+        </div>
+      )}
     </div>
   );
 }
