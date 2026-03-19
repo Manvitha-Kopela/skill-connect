@@ -7,7 +7,8 @@ import {
   Users, 
   Settings, 
   Wallet,
-  Home
+  Home,
+  GraduationCap
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -19,6 +20,7 @@ interface DashboardLayoutProps {
 
 const sidebarLinks = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard/enrolled-courses', label: 'Learning Path', icon: GraduationCap },
   { href: '/dashboard/courses', label: 'My Courses', icon: BookOpen },
   { href: '/dashboard/communities', label: 'My Communities', icon: Users },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
@@ -41,7 +43,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className="w-full lg:w-64 flex flex-col gap-2 shrink-0">
         <div className="bg-card border rounded-xl p-2 sticky top-24">
           <div className="px-4 py-3 mb-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Creator Dashboard</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dashboard</h2>
           </div>
           <nav className="flex flex-col gap-1">
             {sidebarLinks.map((link) => (
