@@ -56,7 +56,8 @@ export async function POST(
       return NextResponse.json({ message: 'Comment content is required' }, { status: 400 });
     }
 
-    console.log("Posting comment:", { discussionId, content: content.trim(), userId: decoded.userId });
+    // Debug log to verify userId is being sent
+    console.log("Creating comment with:", { discussionId, userId: decoded.userId });
 
     const comment = await prisma.comment.create({
       data: {
