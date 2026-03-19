@@ -13,7 +13,7 @@ interface Comment {
   id: string;
   content: string;
   createdAt: string;
-  user: {
+  author: {
     id: string;
     name: string;
   };
@@ -57,7 +57,6 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
     if (!trimmedContent) return;
     
     setSubmitting(true);
-    console.log("Posting comment:", trimmedContent);
 
     try {
       const res = await fetch(`/api/discussions/${discussionId}/comments`, {
@@ -70,7 +69,6 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
 
       if (res.ok) {
         setNewComment('');
-        // Option A: Immediately update local state for instant feedback
         setComments(prev => [data, ...prev]);
         toast({ title: "Success", description: "Comment posted!" });
       } else {
@@ -105,7 +103,6 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
       if (res.ok) {
         setReplyContent('');
         setReplyingTo(null);
-        // Refresh to show nested reply correctly
         fetchComments();
         toast({ title: "Success", description: "Reply posted!" });
       } else {
@@ -168,12 +165,12 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
           <div key={comment.id} className="space-y-4">
             <div className="flex gap-4">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={`https://picsum.photos/seed/${comment.user.id}/100/100`} />
-                <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={`https://picsum.photos/seed/${comment.author.id}/100/100`} />
+                <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm">{comment.user.name}</span>
+                  <span className="font-bold text-sm">{comment.author.name}</span>
                   <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                   </span>
@@ -194,7 +191,7 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
                   <div className="mt-4 flex gap-3">
                     <div className="flex-1 space-y-2">
                       <Textarea
-                        placeholder={`Reply to ${comment.user.name}...`}
+                        placeholder={`Reply to ${comment.author.name}...`}
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
                         className="min-h-[80px] text-sm resize-none"
@@ -213,18 +210,17 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
               </div>
             </div>
 
-            {/* Replies */}
             {comment.replies && comment.replies.length > 0 && (
               <div className="ml-12 space-y-4 border-l pl-4">
                 {comment.replies.map((reply) => (
                   <div key={reply.id} className="flex gap-3">
                     <Avatar className="h-7 w-7">
-                      <AvatarImage src={`https://picsum.photos/seed/${reply.user.id}/100/100`} />
-                      <AvatarFallback>{reply.user.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={`https://picsum.photos/seed/${reply.author.id}/100/100`} />
+                      <AvatarFallback>{reply.author.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs">{reply.user.name}</span>
+                        <span className="font-bold text-xs">{reply.author.name}</span>
                         <span className="text-[10px] text-muted-foreground">
                           {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                         </span>

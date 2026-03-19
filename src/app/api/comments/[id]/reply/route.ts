@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id: parentId } = await params;
+  const { id: parentId } = params;
   const token = req.cookies.get('token')?.value;
 
   if (!token) {
@@ -34,17 +34,15 @@ export async function POST(
       return NextResponse.json({ message: 'Parent comment not found' }, { status: 404 });
     }
 
-    console.log("Creating reply with:", { parentId, userId: decoded.userId });
-
     const reply = await prisma.comment.create({
       data: {
         content: content.trim(),
         discussionId: parentComment.discussionId,
-        userId: decoded.userId,
+        authorId: decoded.userId,
         parentId: parentId
       },
       include: {
-        user: { select: { id: true, name: true } }
+        author: { select: { id: true, name: true } }
       }
     });
 

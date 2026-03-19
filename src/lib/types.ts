@@ -26,10 +26,14 @@ export type Discussion = Prisma.DiscussionGetPayload<{
     author: true,
     comments: {
       include: {
-        user: true,
+        author: {
+          select: { id: true, name: true }
+        },
         replies: {
           include: {
-            user: true
+            author: {
+              select: { id: true, name: true }
+            }
           }
         }
       }
@@ -42,12 +46,12 @@ export type Discussion = Prisma.DiscussionGetPayload<{
 
 export type Comment = Prisma.CommentGetPayload<{
   include: {
-    user: {
+    author: {
       select: { id: true, name: true }
     },
     replies: {
       include: {
-        user: {
+        author: {
           select: { id: true, name: true }
         }
       }

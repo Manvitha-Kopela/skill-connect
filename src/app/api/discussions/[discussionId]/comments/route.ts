@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ discussionId: string }> }
+  { params }: { params: { discussionId: string } }
 ) {
-  const { discussionId } = await params;
+  const { discussionId } = params;
 
   try {
     const comments = await prisma.comment.findMany({
@@ -15,12 +15,12 @@ export async function GET(
         parentId: null 
       },
       include: {
-        user: {
+        author: {
           select: { id: true, name: true }
         },
         replies: {
           include: {
-            user: {
+            author: {
               select: { id: true, name: true }
             }
           },
@@ -39,9 +39,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ discussionId: string }> }
+  { params }: { params: { discussionId: string } }
 ) {
-  const { discussionId } = await params;
+  const { discussionId } = params;
   const token = req.cookies.get('token')?.value;
 
   if (!token) {
@@ -61,20 +61,17 @@ export async function POST(
       return NextResponse.json({ message: 'Comment content is required' }, { status: 400 });
     }
 
-    // Debug log to verify userId is being sent
-    console.log("Creating comment with:", { discussionId, userId: decoded.userId });
-
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
         discussionId,
-        userId: decoded.userId,
+        authorId: decoded.userId,
       },
       include: {
-        user: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true } },
         replies: {
           include: {
-            user: { select: { id: true, name: true } }
+            author: { select: { id: true, name: true } }
           }
         }
       }
