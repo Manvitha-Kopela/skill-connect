@@ -148,7 +148,9 @@ export default function PostCard({ post }: PostCardProps) {
           </DropdownMenu>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap text-foreground/90">{post.content}</p>
+          <p className="whitespace-pre-wrap text-foreground/90 text-sm sm:text-base leading-relaxed">
+            {post.content}
+          </p>
         </CardContent>
         <CardFooter className="flex justify-start gap-2">
           <motion.div whileTap={{ scale: 0.9 }}>
