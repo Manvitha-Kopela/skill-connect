@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function CommunityDiscussionPage({ params }: { params: Promise<{ communityId: string }> }) {
   const resolvedParams = use(params);
@@ -31,6 +32,10 @@ export default function CommunityDiscussionPage({ params }: { params: Promise<{ 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Search and Filter State
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
   const fetchCommunityData = async () => {
     try {
@@ -90,6 +95,25 @@ export default function CommunityDiscussionPage({ params }: { params: Promise<{ 
     }
   };
 
+  // Applied Search and Filter
+  const filteredDiscussions = useMemo(() => {
+    if (!community?.discussions) return [];
+    
+    return community.discussions.filter((d: any) => {
+      // Apply Search
+      const matchesSearch = d.content.toLowerCase().includes(search.toLowerCase());
+      if (!matchesSearch) return false;
+
+      // Apply Filter
+      if (filter === "all") return true;
+      if (filter === "unanswered") return (d._count?.comments || 0) === 0;
+      if (filter === "announcements") return d.type === "announcement"; // Safe if type exists
+      if (filter === "qa") return d.type === "qa"; // Safe if type exists
+      
+      return true;
+    });
+  }, [community, search, filter]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -134,25 +158,58 @@ export default function CommunityDiscussionPage({ params }: { params: Promise<{ 
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search discussions..." className="pl-10 h-12" />
+          <Input 
+            placeholder="Search discussions..." 
+            className="pl-10 h-12" 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </div>
 
       <div className="space-y-6">
         <div className="flex items-center gap-2">
-          <Badge>All</Badge>
-          <Badge variant="outline">Unanswered</Badge>
-          <Badge variant="outline">Announcements</Badge>
-          <Badge variant="outline">Q&A</Badge>
+          <Badge 
+            className="cursor-pointer" 
+            variant={filter === "all" ? "default" : "outline"}
+            onClick={() => setFilter("all")}
+          >
+            All
+          </Badge>
+          <Badge 
+            className="cursor-pointer" 
+            variant={filter === "unanswered" ? "default" : "outline"}
+            onClick={() => setFilter("unanswered")}
+          >
+            Unanswered
+          </Badge>
+          <Badge 
+            className="cursor-pointer" 
+            variant={filter === "announcements" ? "default" : "outline"}
+            onClick={() => setFilter("announcements")}
+          >
+            Announcements
+          </Badge>
+          <Badge 
+            className="cursor-pointer" 
+            variant={filter === "qa" ? "default" : "outline"}
+            onClick={() => setFilter("qa")}
+          >
+            Q&A
+          </Badge>
         </div>
 
         <div className="grid gap-6">
-          {!community.discussions || community.discussions.length === 0 ? (
+          {filteredDiscussions.length === 0 ? (
             <div className="py-20 text-center border-2 border-dashed rounded-xl bg-muted/20">
-              <p className="text-muted-foreground">No discussions started yet. Be the first to post!</p>
+              <p className="text-muted-foreground">
+                {search || filter !== "all" 
+                  ? "No results matching your search or filter." 
+                  : "No discussions started yet. Be the first to post!"}
+              </p>
             </div>
           ) : (
-            community.discussions.map((discussion: any) => (
+            filteredDiscussions.map((discussion: any) => (
               <PostCard key={discussion.id} post={discussion} />
             ))
           )}

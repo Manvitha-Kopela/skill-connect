@@ -112,6 +112,12 @@ export default function PostCard({ post }: PostCardProps) {
   };
 
   const isAuthor = user?.id === post.authorId;
+
+  // Clean Markdown headers from display
+  const cleanLine = (line: string) => {
+    return line.replace(/^#+\s*/, "");
+  };
+
   const lines = post.content.split('\n');
   const firstLine = lines[0];
   const otherLines = lines.slice(1).join('\n');
@@ -162,7 +168,7 @@ export default function PostCard({ post }: PostCardProps) {
         </CardHeader>
         <CardContent className="space-y-2">
           <p className="font-semibold text-base text-foreground leading-tight">
-            {firstLine}
+            {cleanLine(firstLine)}
           </p>
           {otherLines.length > 0 && (
             <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
