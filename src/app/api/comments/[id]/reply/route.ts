@@ -15,6 +15,11 @@ export async function POST(
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
+    
+    if (!decoded || !decoded.userId) {
+      return NextResponse.json({ message: 'Invalid authentication' }, { status: 401 });
+    }
+
     const { content } = await req.json();
 
     if (!content?.trim()) {
@@ -28,6 +33,8 @@ export async function POST(
     if (!parentComment) {
       return NextResponse.json({ message: 'Parent comment not found' }, { status: 404 });
     }
+
+    console.log("Creating reply with:", { parentId, userId: decoded.userId });
 
     const reply = await prisma.comment.create({
       data: {
@@ -44,6 +51,9 @@ export async function POST(
     return NextResponse.json(reply, { status: 201 });
   } catch (error: any) {
     console.error("Reply creation error:", error);
+    if (error.name === 'JsonWebTokenError') {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }

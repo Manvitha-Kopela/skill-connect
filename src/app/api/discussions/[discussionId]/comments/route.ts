@@ -50,6 +50,11 @@ export async function POST(
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
+    
+    if (!decoded || !decoded.userId) {
+      return NextResponse.json({ message: 'Invalid authentication' }, { status: 401 });
+    }
+
     const { content } = await req.json();
 
     if (!content || !content.trim()) {
@@ -78,6 +83,9 @@ export async function POST(
     return NextResponse.json(comment, { status: 201 });
   } catch (error: any) {
     console.error("Comment API error:", error);
+    if (error.name === 'JsonWebTokenError') {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
     return NextResponse.json({ message: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
