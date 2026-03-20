@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle, Layers, Edit, Trash2, Loader2 } from 'lucide-react';
@@ -29,9 +29,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-export default function ModuleManagementPage({ params }: { params: Promise<{ courseId: string }> }) {
-  const resolvedParams = use(params);
-  const courseId = resolvedParams.courseId;
+export default function ModuleManagementPage({ params }: { params: { courseId: string } }) {
+  const courseId = params.courseId;
   const { toast } = useToast();
   const router = useRouter();
   
@@ -162,7 +161,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
       <div className="flex items-center justify-between">
         <Link 
           href={`/dashboard/courses/${courseId}`} 
-          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Editor
         </Link>
@@ -170,7 +169,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
           setModuleTitle("");
           setModuleDescription("");
           setCreateOpen(true);
-        }} className="gap-2">
+        }} className="gap-2 cursor-pointer">
           <PlusCircle className="h-4 w-4" />
           Add New Module
         </Button>
@@ -189,7 +188,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                 <Layers className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
                 <h3 className="text-lg font-bold">No modules yet</h3>
                 <p className="text-muted-foreground mb-6">Create your first module to start building the curriculum.</p>
-                <Button onClick={() => setCreateOpen(true)}>
+                <Button onClick={() => setCreateOpen(true)} className="cursor-pointer">
                   Create First Module
                 </Button>
               </CardContent>
@@ -218,7 +217,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-9 w-9 p-0"
+                      className="h-9 w-9 p-0 cursor-pointer"
                       onClick={() => {
                         setSelectedModule(module);
                         setModuleTitle(module.title);
@@ -231,7 +230,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-9 w-9 p-0 text-destructive"
+                      className="h-9 w-9 p-0 text-destructive cursor-pointer"
                       onClick={() => {
                         setSelectedModule(module);
                         setDeleteOpen(true);
@@ -278,8 +277,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateModule} disabled={isSubmitting || !moduleTitle.trim()}>
+            <Button variant="outline" onClick={() => setCreateOpen(false)} className="cursor-pointer">Cancel</Button>
+            <Button onClick={handleCreateModule} disabled={isSubmitting || !moduleTitle.trim()} className="cursor-pointer">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Module
             </Button>
@@ -316,8 +315,8 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditModule} disabled={isSubmitting || !moduleTitle.trim()}>
+            <Button variant="outline" onClick={() => setEditOpen(false)} className="cursor-pointer">Cancel</Button>
+            <Button onClick={handleEditModule} disabled={isSubmitting || !moduleTitle.trim()} className="cursor-pointer">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
@@ -336,13 +335,13 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting} className="cursor-pointer">Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
                 handleDeleteModule();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
               disabled={isSubmitting}
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

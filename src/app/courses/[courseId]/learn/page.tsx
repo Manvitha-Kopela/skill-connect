@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,9 +28,8 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
-export default function LearningPage({ params }: { params: Promise<{ courseId: string }> }) {
-  const resolvedParams = use(params);
-  const courseId = resolvedParams.courseId;
+export default function LearningPage({ params }: { params: { courseId: string } }) {
+  const courseId = params.courseId;
   const router = useRouter();
   const { toast } = useToast();
 

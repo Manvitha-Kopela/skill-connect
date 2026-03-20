@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,9 +20,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-export default function CommunityDiscussionPage({ params }: { params: Promise<{ communityId: string }> }) {
-  const resolvedParams = use(params);
-  const communityId = resolvedParams.communityId;
+export default function CommunityDiscussionPage({ params }: { params: { communityId: string } }) {
+  const communityId = params.communityId;
   const router = useRouter();
   const { toast } = useToast();
 
@@ -138,11 +137,11 @@ export default function CommunityDiscussionPage({ params }: { params: Promise<{ 
       <div className="flex items-center justify-between">
         <Link 
           href={`/communities/${community.id}`} 
-          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Community Feed
         </Link>
-        <Button className="gap-2" onClick={() => setOpen(true)}>
+        <Button className="gap-2 cursor-pointer" onClick={() => setOpen(true)}>
           <PlusCircle className="h-4 w-4" /> New Discussion
         </Button>
       </div>
@@ -241,10 +240,10 @@ export default function CommunityDiscussionPage({ params }: { params: Promise<{ 
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting} className="cursor-pointer">
               Cancel
             </Button>
-            <Button onClick={handleCreateDiscussion} disabled={isSubmitting || !content.trim()}>
+            <Button onClick={handleCreateDiscussion} disabled={isSubmitting || !content.trim()} className="cursor-pointer">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting...

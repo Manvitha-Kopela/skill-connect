@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -34,10 +34,9 @@ import { Textarea } from '@/components/ui/textarea';
 export default function LessonsPage({
   params,
 }: {
-  params: Promise<{ courseId: string }>;
+  params: { courseId: string };
 }) {
-  const resolvedParams = use(params);
-  const courseId = resolvedParams.courseId;
+  const courseId = params.courseId;
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
@@ -130,7 +129,7 @@ export default function LessonsPage({
     return (
       <div className="p-8 text-center">
         <h1 className="text-xl font-bold">Course not found</h1>
-        <Button asChild variant="link" className="mt-4">
+        <Button asChild variant="link" className="mt-4 cursor-pointer">
           <Link href="/dashboard/courses">Back to My Courses</Link>
         </Button>
       </div>
@@ -142,7 +141,7 @@ export default function LessonsPage({
       <div className="flex items-center justify-between">
         <Link 
           href={`/dashboard/courses/${course.id}`} 
-          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Editor
         </Link>
@@ -160,7 +159,7 @@ export default function LessonsPage({
               <Play className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
               <h3 className="text-lg font-bold">No curriculum structure</h3>
               <p className="text-muted-foreground mb-6">You need to create at least one module before adding lessons.</p>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="cursor-pointer">
                 <Link href={`/dashboard/courses/${course.id}/modules`}>Go to Modules</Link>
               </Button>
             </CardContent>
@@ -214,6 +213,7 @@ export default function LessonsPage({
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingLesson(lesson);
@@ -226,6 +226,7 @@ export default function LessonsPage({
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
                               setLessonToDelete(lesson);
@@ -287,7 +288,7 @@ export default function LessonsPage({
             <Button
               variant="outline"
               onClick={() => setLessonToDelete(null)}
-              className="font-bold"
+              className="font-bold cursor-pointer"
             >
               Cancel
             </Button>
@@ -297,7 +298,7 @@ export default function LessonsPage({
                 deleteLesson(lessonToDelete.id);
                 setLessonToDelete(null);
               }}
-              className="font-bold"
+              className="font-bold cursor-pointer"
             >
               Delete
             </Button>
@@ -341,10 +342,10 @@ export default function LessonsPage({
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setEditingLesson(null)} disabled={isUpdating} className="font-bold">
+              <Button type="button" variant="outline" onClick={() => setEditingLesson(null)} disabled={isUpdating} className="font-bold cursor-pointer">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isUpdating || !editTitle.trim()} className="min-w-[120px] font-bold">
+              <Button type="submit" disabled={isUpdating || !editTitle.trim()} className="min-w-[120px] font-bold cursor-pointer">
                 {isUpdating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
