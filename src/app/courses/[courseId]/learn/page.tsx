@@ -40,6 +40,9 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [completing, setCompleting] = useState(false);
+  
+  // Single source of truth for completion
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -56,7 +59,19 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
           const found = courseData.courses.find((c: any) => c.id === courseId);
           if (found) {
             setCourse(found);
-            setProgress(statusData.progress || 0);
+            const currentProgress = statusData.progress || 0;
+            setProgress(currentProgress);
+            
+            // Derive completed IDs from progress percentage
+            const allLessons: any[] = [];
+            found.modules.forEach((m: any) => {
+              if (m.lessons) allLessons.push(...m.lessons);
+            });
+            
+            const total = allLessons.length;
+            const completedCount = Math.round((currentProgress / 100) * total);
+            const completedIds = allLessons.slice(0, completedCount).map(l => l.id);
+            setCompletedLessonIds(completedIds);
             
             // Set initial lesson
             if (found.modules?.length > 0) {
@@ -77,7 +92,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   }, [courseId]);
 
   const handleCompleteLesson = async () => {
-    if (!currentLesson || completing) return;
+    if (!currentLesson || completing || completedLessonIds.includes(currentLesson.id)) return;
 
     setCompleting(true);
     try {
@@ -93,6 +108,10 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
       if (res.ok) {
         const data = await res.json();
         setProgress(data.progress);
+        
+        // Update local source of truth
+        setCompletedLessonIds(prev => [...prev, currentLesson.id]);
+        
         setIsCompleteDialogOpen(true);
       } else {
         throw new Error("Failed to update progress");
@@ -158,24 +177,12 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
     );
   }
 
-  // Helper to determine if a lesson should show as completed based on progress
-  const isLessonCompleted = (moduleIdx: number, lessonIdx: number) => {
-    const totalLessons = course.modules.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0);
-    const completedCount = Math.round((progress / 100) * totalLessons);
-    
-    let globalIdx = 0;
-    for (let m = 0; m < moduleIdx; m++) {
-      globalIdx += course.modules[m].lessons?.length || 0;
-    }
-    globalIdx += lessonIdx;
-    
-    return globalIdx < completedCount;
-  };
+  const isCurrentLessonCompleted = currentLesson && completedLessonIds.includes(currentLesson.id);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Button variant="ghost" asChild className="gap-2 font-bold w-fit">
+        <Button variant="ghost" asChild className="gap-2 font-bold w-fit cursor-pointer">
           <Link href="/dashboard/enrolled-courses">
             <ArrowLeft className="h-4 w-4" /> Exit Classroom
           </Link>
@@ -239,12 +246,17 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                 </div>
                 <Button 
                   size="lg" 
-                  className="font-bold gap-2 shadow-xl h-12 px-8 cursor-pointer" 
+                  className={cn(
+                    "font-bold gap-2 shadow-xl h-12 px-8 cursor-pointer transition-all",
+                    isCurrentLessonCompleted && "bg-green-600 hover:bg-green-700 text-white"
+                  )}
                   onClick={handleCompleteLesson}
-                  disabled={completing}
+                  disabled={completing || isCurrentLessonCompleted}
                 >
                   {completing ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : isCurrentLessonCompleted ? (
+                    <>Completed <CheckCircle2 className="h-5 w-5" /></>
                   ) : (
                     <>Complete Lesson <CheckCircle2 className="h-5 w-5" /></>
                   )}
@@ -284,8 +296,8 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                         {module.title}
                       </h4>
                       <div className="space-y-2 ml-3 border-l-2 border-muted pl-4">
-                        {module.lessons?.map((lesson: any, lIdx: number) => {
-                          const completed = isLessonCompleted(mIdx, lIdx);
+                        {module.lessons?.map((lesson: any) => {
+                          const completed = completedLessonIds.includes(lesson.id);
                           return (
                             <button
                               key={lesson.id}
