@@ -13,6 +13,12 @@ export type Course = Prisma.CourseGetPayload<{
 }>;
 export type Community = Prisma.CommunityGetPayload<{
   include: {
+    _count: {
+      select: {
+        discussions: true,
+        members: true
+      }
+    },
     discussions: {
       include: {
         author: true,

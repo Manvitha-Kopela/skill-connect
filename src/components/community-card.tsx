@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -50,7 +49,7 @@ export default function CommunityCard({ community }: CommunityCardProps) {
             </div>
             <div className="flex items-center gap-1.5">
               <MessageSquare className="h-4 w-4 text-primary" />
-              <span>{Math.floor(community.memberCount / 4)} posts</span>
+              <span>{community._count?.discussions ?? 0} posts</span>
             </div>
           </div>
         </CardContent>
