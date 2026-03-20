@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,44 +39,55 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [completing, setCompleting] = useState(false);
-  
-  // Single source of truth for completion
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 
   useEffect(() => {
+    let mounted = true;
+
     async function fetchData() {
       try {
-        // Fetch course structure
-        const courseRes = await fetch('/api/courses');
+        const [courseRes, statusRes] = await Promise.all([
+          fetch('/api/courses'),
+          fetch(`/api/courses/${courseId}/enrollment-status`)
+        ]);
+
+        if (!mounted) return;
+
         const courseData = await courseRes.json();
-        
-        // Fetch enrollment progress
-        const statusRes = await fetch(`/api/courses/${courseId}/enrollment-status`);
         const statusData = await statusRes.json();
 
         if (courseRes.ok && courseData.success) {
           const found = courseData.courses.find((c: any) => c.id === courseId);
           if (found) {
-            setCourse(found);
+            setCourse((prev: any) => {
+              if (JSON.stringify(prev) === JSON.stringify(found)) return prev;
+              return found;
+            });
+
             const currentProgress = statusData.progress || 0;
             setProgress(currentProgress);
             
-            // Derive completed IDs from progress percentage
             const allLessons: any[] = [];
             found.modules.forEach((m: any) => {
               if (m.lessons) allLessons.push(...m.lessons);
             });
             
             const total = allLessons.length;
-            const completedCount = Math.round((currentProgress / 100) * total);
+            const completedCount = total > 0 ? Math.round((currentProgress / 100) * total) : 0;
             const completedIds = allLessons.slice(0, completedCount).map(l => l.id);
-            setCompletedLessonIds(completedIds);
             
-            // Set initial lesson
+            setCompletedLessonIds((prev) => {
+              if (JSON.stringify(prev) === JSON.stringify(completedIds)) return prev;
+              return completedIds;
+            });
+            
             if (found.modules?.length > 0) {
               const firstLesson = found.modules[0].lessons?.[0];
               if (firstLesson) {
-                setCurrentLesson(firstLesson);
+                setCurrentLesson((prev: any) => {
+                  if (prev) return prev;
+                  return firstLesson;
+                });
               }
             }
           }
@@ -84,10 +95,15 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
       } catch (error) {
         console.error("Failed to fetch page data", error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
+
     fetchData();
+
+    return () => {
+      mounted = false;
+    };
   }, [courseId]);
 
   const handleCompleteLesson = async () => {
@@ -107,10 +123,10 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
       if (res.ok) {
         const data = await res.json();
         setProgress(data.progress);
-        
-        // Update local source of truth
-        setCompletedLessonIds(prev => [...prev, currentLesson.id]);
-        
+        setCompletedLessonIds(prev => {
+          if (prev.includes(currentLesson.id)) return prev;
+          return [...prev, currentLesson.id];
+        });
         setIsCompleteDialogOpen(true);
       } else {
         throw new Error("Failed to update progress");
@@ -129,7 +145,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   const goToNextLesson = () => {
     setIsCompleteDialogOpen(false);
     
-    // Find next lesson in the hierarchy
     let foundCurrent = false;
     let nextLesson = null;
 
@@ -200,7 +215,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Main Content Area */}
         <div className="lg:col-span-8 space-y-6">
           <Card className="overflow-hidden border-2 border-primary/10 shadow-2xl rounded-2xl">
             <div className="aspect-video bg-black relative flex items-center justify-center">
@@ -273,7 +287,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
           </Card>
         </div>
 
-        {/* Sidebar: Course Content */}
         <div className="lg:col-span-4 lg:sticky lg:top-24">
           <Card className="lg:max-h-[calc(100vh-12rem)] flex flex-col rounded-2xl shadow-xl border-primary/5">
             <CardHeader className="border-b bg-muted/20">
