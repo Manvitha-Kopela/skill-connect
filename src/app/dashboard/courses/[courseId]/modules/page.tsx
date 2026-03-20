@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -43,6 +44,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AddLessonButton from '@/components/add-lesson-button';
 import { cn } from '@/lib/utils';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 export default function ModuleManagementPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params);
@@ -505,6 +507,11 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
       {/* Lesson Video Preview Dialog */}
       <Dialog open={videoPreviewOpen} onOpenChange={setVideoPreviewOpen}>
         <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden border-none bg-black">
+          <VisuallyHidden>
+            <DialogHeader>
+              <DialogTitle>{selectedLesson?.title || "Video Preview"}</DialogTitle>
+            </DialogHeader>
+          </VisuallyHidden>
           <div className="aspect-video w-full relative">
             {selectedLesson?.videoUrl ? (
               <video 
