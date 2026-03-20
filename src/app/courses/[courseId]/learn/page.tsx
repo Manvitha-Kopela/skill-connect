@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { 
   PlayCircle, 
   CheckCircle2, 
@@ -12,7 +13,8 @@ import {
   Loader2, 
   Video,
   FileText,
-  Clock
+  Clock,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -24,46 +26,116 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LearningPage({ params }: { params: Promise<{ courseId: string }> }) {
   const resolvedParams = use(params);
   const courseId = resolvedParams.courseId;
   const router = useRouter();
+  const { toast } = useToast();
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentLesson, setCurrentLesson] = useState<any>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
-    async function fetchCourseData() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/courses');
-        const data = await res.json();
-        if (res.ok && data.success) {
-          const found = data.courses.find((c: any) => c.id === courseId);
+        // Fetch course structure
+        const courseRes = await fetch('/api/courses');
+        const courseData = await courseRes.json();
+        
+        // Fetch enrollment progress
+        const statusRes = await fetch(`/api/courses/${courseId}/enrollment-status`);
+        const statusData = await statusRes.json();
+
+        if (courseRes.ok && courseData.success) {
+          const found = courseData.courses.find((c: any) => c.id === courseId);
           if (found) {
             setCourse(found);
-            // Default to first lesson of first module
-            if (found.modules && found.modules.length > 0) {
-              const firstModule = found.modules[0];
-              if (firstModule.lessons && firstModule.lessons.length > 0) {
-                setCurrentLesson(firstModule.lessons[0]);
+            setProgress(statusData.progress || 0);
+            
+            // Set initial lesson
+            if (found.modules?.length > 0) {
+              const firstLesson = found.modules[0].lessons?.[0];
+              if (firstLesson) {
+                setCurrentLesson(firstLesson);
               }
             }
           }
         }
       } catch (error) {
-        console.error("Failed to fetch course data", error);
+        console.error("Failed to fetch page data", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchCourseData();
+    fetchData();
   }, [courseId]);
 
-  const handleCompleteLesson = () => {
-    setIsCompleteDialogOpen(true);
+  const handleCompleteLesson = async () => {
+    if (!currentLesson || completing) return;
+
+    setCompleting(true);
+    try {
+      const res = await fetch('/api/lessons/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lessonId: currentLesson.id,
+          courseId: courseId
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setProgress(data.progress);
+        setIsCompleteDialogOpen(true);
+      } else {
+        throw new Error("Failed to update progress");
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not save your progress. Please try again."
+      });
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  const goToNextLesson = () => {
+    setIsCompleteDialogOpen(false);
+    
+    // Find next lesson in the hierarchy
+    let foundCurrent = false;
+    let nextLesson = null;
+
+    for (const module of course.modules) {
+      for (const lesson of module.lessons) {
+        if (foundCurrent) {
+          nextLesson = lesson;
+          break;
+        }
+        if (lesson.id === currentLesson.id) {
+          foundCurrent = true;
+        }
+      }
+      if (nextLesson) break;
+    }
+
+    if (nextLesson) {
+      setCurrentLesson(nextLesson);
+    } else {
+      toast({
+        title: "Course Completed!",
+        description: "You've reached the end of the available content. Great job!"
+      });
+    }
   };
 
   if (loading) {
@@ -86,17 +158,38 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
     );
   }
 
+  // Helper to determine if a lesson should show as completed based on progress
+  const isLessonCompleted = (moduleIdx: number, lessonIdx: number) => {
+    const totalLessons = course.modules.reduce((acc: number, m: any) => acc + (m.lessons?.length || 0), 0);
+    const completedCount = Math.round((progress / 100) * totalLessons);
+    
+    let globalIdx = 0;
+    for (let m = 0; m < moduleIdx; m++) {
+      globalIdx += course.modules[m].lessons?.length || 0;
+    }
+    globalIdx += lessonIdx;
+    
+    return globalIdx < completedCount;
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" asChild className="gap-2 font-bold">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <Button variant="ghost" asChild className="gap-2 font-bold w-fit">
           <Link href="/dashboard/enrolled-courses">
             <ArrowLeft className="h-4 w-4" /> Exit Classroom
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground hidden sm:inline">Course:</span>
-            <span className="text-sm font-black text-primary bg-primary/5 px-3 py-1 rounded-full">{course.title}</span>
+        <div className="flex items-center gap-4 bg-card border rounded-full px-4 py-2 shadow-sm">
+            <div className="flex flex-col min-w-[100px]">
+              <div className="flex justify-between text-[10px] font-black uppercase tracking-tighter mb-1">
+                <span className="text-muted-foreground">Course Progress</span>
+                <span className="text-primary">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-1.5" />
+            </div>
+            <div className="h-8 w-px bg-border hidden sm:block" />
+            <span className="text-sm font-black text-primary truncate max-w-[200px] hidden sm:inline">{course.title}</span>
         </div>
       </div>
 
@@ -139,13 +232,22 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                     </div>
                     {currentLesson?.videoUrl && (
                       <div className="flex items-center gap-1.5 text-primary">
-                        <Video className="h-4 w-4" /> Cloud Hosted
+                        <Video className="h-4 w-4" /> HD Streaming
                       </div>
                     )}
                   </div>
                 </div>
-                <Button size="lg" className="font-bold gap-2 shadow-xl h-12 px-8" onClick={handleCompleteLesson}>
-                  Complete Lesson <CheckCircle2 className="h-5 w-5" />
+                <Button 
+                  size="lg" 
+                  className="font-bold gap-2 shadow-xl h-12 px-8 cursor-pointer" 
+                  onClick={handleCompleteLesson}
+                  disabled={completing}
+                >
+                  {completing ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>Complete Lesson <CheckCircle2 className="h-5 w-5" /></>
+                  )}
                 </Button>
               </div>
               
@@ -182,27 +284,34 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                         {module.title}
                       </h4>
                       <div className="space-y-2 ml-3 border-l-2 border-muted pl-4">
-                        {module.lessons?.map((lesson: any) => (
-                          <button
-                            key={lesson.id}
-                            onClick={() => setCurrentLesson(lesson)}
-                            className={cn(
-                              "w-full text-left px-4 py-3 rounded-xl text-sm transition-all group relative",
-                              currentLesson?.id === lesson.id 
-                                ? "bg-primary text-primary-foreground font-bold shadow-lg scale-[1.02]" 
-                                : "hover:bg-muted text-foreground/80"
-                            )}
-                          >
-                            <div className="flex items-center gap-3">
-                              {currentLesson?.id === lesson.id ? (
-                                <PlayCircle className="h-4 w-4 shrink-0 animate-pulse" />
-                              ) : (
-                                <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 group-hover:border-primary shrink-0 transition-colors" />
+                        {module.lessons?.map((lesson: any, lIdx: number) => {
+                          const completed = isLessonCompleted(mIdx, lIdx);
+                          return (
+                            <button
+                              key={lesson.id}
+                              onClick={() => setCurrentLesson(lesson)}
+                              className={cn(
+                                "w-full text-left px-4 py-3 rounded-xl text-sm transition-all group relative cursor-pointer",
+                                currentLesson?.id === lesson.id 
+                                  ? "bg-primary text-primary-foreground font-bold shadow-lg scale-[1.02]" 
+                                  : "hover:bg-muted text-foreground/80"
                               )}
-                              <span className="line-clamp-2">{lesson.title}</span>
-                            </div>
-                          </button>
-                        ))}
+                            >
+                              <div className="flex items-center gap-3">
+                                {currentLesson?.id === lesson.id ? (
+                                  <PlayCircle className="h-4 w-4 shrink-0 animate-pulse" />
+                                ) : completed ? (
+                                  <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                                ) : (
+                                  <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 group-hover:border-primary shrink-0 transition-colors" />
+                                )}
+                                <span className={cn("line-clamp-2", completed && currentLesson?.id !== lesson.id && "text-muted-foreground")}>
+                                  {lesson.title}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   ))
@@ -222,7 +331,9 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button onClick={() => setIsCompleteDialogOpen(false)}>Continue Learning</Button>
+            <Button className="w-full font-bold cursor-pointer" onClick={goToNextLesson}>
+              Continue to Next Lesson <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

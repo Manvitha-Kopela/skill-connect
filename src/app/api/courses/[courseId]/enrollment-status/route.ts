@@ -1,10 +1,9 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
 /**
- * Checks if the current user is enrolled in a specific course.
+ * Checks if the current user is enrolled in a specific course and returns progress.
  */
 export async function GET(
   req: NextRequest,
@@ -14,7 +13,7 @@ export async function GET(
   const token = req.cookies.get('token')?.value;
 
   if (!token) {
-    return NextResponse.json({ enrolled: false });
+    return NextResponse.json({ enrolled: false, progress: 0 });
   }
 
   try {
@@ -22,7 +21,7 @@ export async function GET(
     const userId = decoded.userId;
 
     if (!userId || !courseId) {
-      return NextResponse.json({ enrolled: false });
+      return NextResponse.json({ enrolled: false, progress: 0 });
     }
 
     const enrollment = await prisma.enrollment.findUnique({
@@ -34,9 +33,12 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({ enrolled: !!enrollment });
+    return NextResponse.json({ 
+      enrolled: !!enrollment,
+      progress: enrollment?.progress || 0
+    });
   } catch (error) {
     console.error('Enrollment status check error:', error);
-    return NextResponse.json({ enrolled: false });
+    return NextResponse.json({ enrolled: false, progress: 0 });
   }
 }
