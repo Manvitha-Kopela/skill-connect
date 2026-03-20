@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-export default function CommunityDiscussionPage({ params }: { params: { communityId: string } }) {
-  const communityId = params.communityId;
+export default function CommunityDiscussionPage({ params }: { params: Promise<{ communityId: string }> }) {
+  const { communityId } = use(params);
   const router = useRouter();
   const { toast } = useToast();
 

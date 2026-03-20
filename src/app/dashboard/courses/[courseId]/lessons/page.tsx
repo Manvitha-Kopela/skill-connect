@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -34,9 +34,9 @@ import { Textarea } from '@/components/ui/textarea';
 export default function LessonsPage({
   params,
 }: {
-  params: { courseId: string };
+  params: Promise<{ courseId: string }>;
 }) {
-  const courseId = params.courseId;
+  const { courseId } = use(params);
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();

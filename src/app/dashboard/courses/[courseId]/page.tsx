@@ -39,9 +39,9 @@ async function getCurrentUser() {
 export default async function CourseEditorPage({
   params,
 }: {
-  params: { courseId: string };
+  params: Promise<{ courseId: string }>;
 }) {
-  const courseId = params.courseId;
+  const { courseId } = await params;
 
   if (!courseId) {
     return <div>Course ID missing from route</div>;

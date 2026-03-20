@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle, Layers, Edit, Trash2, Loader2 } from 'lucide-react';
@@ -29,8 +29,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-export default function ModuleManagementPage({ params }: { params: { courseId: string } }) {
-  const courseId = params.courseId;
+export default function ModuleManagementPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = use(params);
   const { toast } = useToast();
   const router = useRouter();
   
