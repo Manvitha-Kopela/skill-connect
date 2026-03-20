@@ -211,6 +211,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                   controls 
                   className="w-full h-full"
                   poster={course.thumbnailUrl}
+                  controlsList="nodownload"
                 >
                   <source src={currentLesson.videoUrl} type="video/mp4" />
                   Your browser does not support the video tag.

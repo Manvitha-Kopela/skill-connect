@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -257,15 +256,13 @@ export default function LessonsPage({
           </DialogHeader>
           <div className="aspect-video w-full">
             {selectedLesson?.videoUrl ? (
-              <video controls className="w-full h-full rounded-lg bg-black">
-                <source
-                  src={selectedLesson.videoUrl.startsWith('http') ? selectedLesson.videoUrl : (selectedLesson.videoUrl.startsWith('/') ? selectedLesson.videoUrl : `/${selectedLesson.videoUrl}`)}
-                  type="video/mp4"
-                />
-                <source
-                  src={selectedLesson.videoUrl.startsWith('http') ? selectedLesson.videoUrl : (selectedLesson.videoUrl.startsWith('/') ? selectedLesson.videoUrl : `/${selectedLesson.videoUrl}`)}
-                  type="video/webm"
-                />
+              <video 
+                key={selectedLesson.id}
+                controls 
+                className="w-full h-full rounded-lg bg-black"
+                controlsList="nodownload"
+              >
+                <source src={selectedLesson.videoUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             ) : (
@@ -278,7 +275,7 @@ export default function LessonsPage({
       </Dialog>
 
       {/* Delete Lesson Confirmation Dialog */}
-      <Dialog open={lessonToDelete !== null} onOpenChange={() => setLessonToDelete(null)}>
+      <Dialog open={lessonToDelete !== null} onOpenChange={setLessonToDelete(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Lesson</DialogTitle>
@@ -309,7 +306,7 @@ export default function LessonsPage({
       </Dialog>
 
       {/* Edit Lesson Dialog */}
-      <Dialog open={editingLesson !== null} onOpenChange={() => setEditingLesson(null)}>
+      <Dialog open={editingLesson !== null} onOpenChange={setEditingLesson(null)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Lesson</DialogTitle>
