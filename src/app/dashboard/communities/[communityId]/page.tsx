@@ -43,7 +43,6 @@ export default async function CommunityManagementPage({ params }: { params: Prom
 
   if (!community) notFound();
 
-  // Verify the current user is an ADMIN of this community
   const membership = await prisma.communityMember.findUnique({
     where: {
       userId_communityId: {
@@ -64,7 +63,7 @@ export default async function CommunityManagementPage({ params }: { params: Prom
           href="/dashboard/communities" 
           className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Communities
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to My Communities
         </Link>
         <Button asChild variant="outline" size="sm">
           <Link href={`/communities/${community.id}`} className="flex items-center gap-2">
@@ -85,7 +84,7 @@ export default async function CommunityManagementPage({ params }: { params: Prom
           <p className="text-muted-foreground max-w-2xl">{community.description}</p>
         </div>
         <Button asChild>
-          <Link href={`/dashboard/communities/${community.id}/edit`}>
+          <Link href={`/dashboard/communities/${community.id}/settings`}>
             <Edit className="h-4 w-4 mr-2" /> Edit Community Settings
           </Link>
         </Button>
@@ -98,19 +97,18 @@ export default async function CommunityManagementPage({ params }: { params: Prom
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="h-5 w-5 text-blue-500" />
-              Member Activity
+              Member Management
             </CardTitle>
+            <CardDescription>View and manage community participants</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
              <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Total Members</span>
                 <span className="font-bold">{community._count.members}</span>
              </div>
-             <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Active Now</span>
-                <span className="font-bold text-green-600">Live</span>
-             </div>
-             <Button variant="outline" className="w-full mt-4">Manage Members</Button>
+             <Button variant="outline" className="w-full mt-4" asChild>
+                <Link href={`/dashboard/communities/${community.id}/members`}>Manage Members</Link>
+             </Button>
           </CardContent>
         </Card>
 
@@ -120,17 +118,16 @@ export default async function CommunityManagementPage({ params }: { params: Prom
               <MessageSquare className="h-5 w-5 text-purple-500" />
               Content Moderation
             </CardTitle>
+            <CardDescription>Review and manage community discussions</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
              <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Total Posts</span>
                 <span className="font-bold">{community._count.discussions}</span>
              </div>
-             <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Pending Reports</span>
-                <span className="font-bold text-red-600">0</span>
-             </div>
-             <Button variant="outline" className="w-full mt-4">Review Posts</Button>
+             <Button variant="outline" className="w-full mt-4" asChild>
+                <Link href={`/dashboard/communities/${community.id}/posts`}>Review Posts</Link>
+             </Button>
           </CardContent>
         </Card>
       </div>
