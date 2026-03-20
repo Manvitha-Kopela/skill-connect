@@ -12,6 +12,16 @@ export async function GET(req: NextRequest) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
+    
+    // Update user activity timestamp on every authenticated check
+    // This provides "presence" tracking without real-time overhead
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { lastSeenAt: new Date() }
+    }).catch(() => {
+      // Silence error if migration hasn't been run yet
+    });
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {

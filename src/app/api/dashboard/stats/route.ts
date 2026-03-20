@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
@@ -12,6 +13,12 @@ export async function GET(req: NextRequest) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
     const userId = decoded.userId;
+
+    // Update activity tracking
+    await prisma.user.update({
+      where: { id: userId },
+      data: { lastSeenAt: new Date() }
+    }).catch(() => {});
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
@@ -62,7 +63,7 @@ async function getCommunity(id: string): Promise<CommunityWithDiscussions | null
             }
           },
           orderBy: {
-            createdAt: 'desc'
+            id: 'desc'
           }
         },
       },
@@ -99,6 +100,28 @@ async function checkIsMember(userId: string | null, communityId: string) {
   return !!membership;
 }
 
+async function getActiveMemberCount(communityId: string) {
+  try {
+    // Define "Active" as users seen within the last 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    
+    const count = await prisma.communityMember.count({
+      where: {
+        communityId,
+        user: {
+          lastSeenAt: {
+            gte: fiveMinutesAgo
+          }
+        }
+      }
+    });
+    return count;
+  } catch (error) {
+    // Fallback to 0 if column doesn't exist yet or query fails
+    return 0;
+  }
+}
+
 export default async function CommunityDetailPage({ params }: { params: Promise<{ communityId: string }> }) {
   const { communityId } = await params;
   const [community, currentUserId] = await Promise.all([
@@ -110,9 +133,10 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
     notFound();
   }
 
-  const [topContributors, isMember] = await Promise.all([
+  const [topContributors, isMember, activeNow] = await Promise.all([
     getTopContributors(communityId),
-    checkIsMember(currentUserId, communityId)
+    checkIsMember(currentUserId, communityId),
+    getActiveMemberCount(communityId)
   ]);
 
   return (
@@ -139,7 +163,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
               </p>
             </div>
             <div className="flex gap-3">
-              <Button asChild size="lg" variant="secondary" className="font-bold border bg-muted text-foreground hover:bg-muted/80 shadow-lg">
+              <Button asChild size="lg" variant="secondary" className="font-bold border bg-muted text-foreground hover:bg-muted/80 shadow-lg cursor-pointer">
                 <Link href={`/communities/${community.id}/posts`}>View Discussions</Link>
               </Button>
               <JoinCommunityButton communityId={community.id} initialIsMember={isMember} />
@@ -157,17 +181,17 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
               </CardHeader>
               <CardContent>
                 <nav className="flex flex-col space-y-1">
-                  <Button variant="ghost" asChild className="justify-start px-2 font-medium text-primary">
+                  <Button variant="ghost" asChild className="justify-start px-2 font-medium text-primary cursor-pointer">
                     <Link href={`/communities/${community.id}`}>
                       <MessageSquare className="mr-3 h-4 w-4" /> Feed
                     </Link>
                   </Button>
-                  <Button variant="ghost" asChild className="justify-start px-2">
+                  <Button variant="ghost" asChild className="justify-start px-2 cursor-pointer">
                     <Link href={`/communities/${community.id}/posts`}>
                       <Book className="mr-3 h-4 w-4" /> Discussion Board
                     </Link>
                   </Button>
-                  <Button variant="ghost" asChild className="justify-start px-2">
+                  <Button variant="ghost" asChild className="justify-start px-2 cursor-pointer">
                     <Link href={`/communities/${community.id}/members`}>
                       <Users className="mr-3 h-4 w-4" /> Members
                     </Link>
@@ -209,7 +233,7 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                   <span className="text-sm text-muted-foreground">Active Now</span>
                   <span className="font-bold flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    {Math.floor(community.memberCount / 15).toLocaleString()}
+                    {activeNow.toLocaleString()}
                   </span>
                 </div>
                 <Separator />
