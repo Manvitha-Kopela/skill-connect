@@ -55,8 +55,9 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Atomic transaction for enrollment and coin deduction
+    // Atomic transaction for enrollment and dual-sided coin transfer
     const result = await prisma.$transaction([
+      // 1. Create Enrollment
       prisma.enrollment.create({
         data: {
           userId: user.id,
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
           progress: 0,
         },
       }),
+      // 2. Deduct from Learner
       prisma.user.update({
         where: { id: user.id },
         data: {
@@ -72,6 +74,7 @@ export async function POST(req: NextRequest) {
           },
         },
       }),
+      // 3. Create Learner Transaction Record
       prisma.coinTransaction.create({
         data: {
           userId: user.id,
@@ -80,6 +83,25 @@ export async function POST(req: NextRequest) {
           reason: `Enrolled in course: ${course.title}`,
         },
       }),
+      // 4. Pay Instructor (unless it's a free course)
+      ...(course.priceInCoins > 0 ? [
+        prisma.user.update({
+          where: { id: course.instructorId },
+          data: {
+            coinBalance: {
+              increment: course.priceInCoins,
+            },
+          },
+        }),
+        prisma.coinTransaction.create({
+          data: {
+            userId: course.instructorId,
+            amount: course.priceInCoins,
+            type: 'EARN',
+            reason: `Sold course: ${course.title}`,
+          },
+        })
+      ] : [])
     ]);
 
     return NextResponse.json({ 
