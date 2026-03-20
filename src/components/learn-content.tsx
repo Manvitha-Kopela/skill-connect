@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -24,6 +24,13 @@ export default function LearnContent({ course }: LearnContentProps) {
   const allLessons = course.modules.flatMap((m: any) => m.lessons);
   const [currentLesson, setCurrentLesson] = useState(allLessons[0] || null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handlePlay = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+    }
+  };
 
   if (!course.modules || course.modules.length === 0) {
     return (
@@ -98,9 +105,11 @@ export default function LearnContent({ course }: LearnContentProps) {
               {currentLesson.videoUrl ? (
                 <video 
                   key={currentLesson.id}
+                  ref={videoRef}
                   controls 
                   className="w-full h-full object-contain"
                   poster={course.thumbnailUrl}
+                  onPlay={handlePlay}
                 >
                   <source src={currentLesson.videoUrl} type="video/mp4" />
                   Your browser does not support the video tag.

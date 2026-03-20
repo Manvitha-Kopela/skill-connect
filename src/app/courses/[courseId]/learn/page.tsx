@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   const { courseId } = use(params);
   const router = useRouter();
   const { toast } = useToast();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
         if (courseRes.ok && courseData.success) {
           const found = courseData.courses.find((c: any) => c.id === courseId);
           if (found) {
-            // Course state update with equality check
             setCourse((prev: any) => {
               if (JSON.stringify(prev) === JSON.stringify(found)) {
                 return prev;
@@ -68,14 +68,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
             });
 
             const currentProgress = statusData.progress || 0;
-            
-            // Progress state update with equality check
-            setProgress(prev => {
-              if (prev === currentProgress) {
-                return prev;
-              }
-              return currentProgress;
-            });
+            setProgress(prev => prev === currentProgress ? prev : currentProgress);
             
             const allLessons: any[] = [];
             found.modules.forEach((m: any) => {
@@ -86,7 +79,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
             const completedCount = total > 0 ? Math.round((currentProgress / 100) * total) : 0;
             const completedIds = allLessons.slice(0, completedCount).map((l: any) => l.id);
             
-            // Completed lessons state update with equality check
             setCompletedLessonIds(prev => {
               if (JSON.stringify(prev) === JSON.stringify(completedIds)) {
                 return prev;
@@ -97,7 +89,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
             if (found.modules?.length > 0) {
               const firstLesson = found.modules[0].lessons?.[0];
               if (firstLesson) {
-                // Initial lesson update using the requested pattern
                 setCurrentLesson((prev: any) => prev ?? firstLesson);
               }
             }
@@ -116,6 +107,12 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
       mounted = false;
     };
   }, [courseId]);
+
+  const handlePlay = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+    }
+  };
 
   const handleCompleteLesson = async () => {
     if (!currentLesson || completing || completedLessonIds.includes(currentLesson.id)) return;
@@ -234,10 +231,12 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
               {currentLesson?.videoUrl ? (
                 <video 
                   key={currentLesson.id}
+                  ref={videoRef}
                   controls 
                   className="w-full h-full"
                   poster={course.thumbnailUrl}
                   controlsList="nodownload"
+                  onPlay={handlePlay}
                 >
                   <source src={currentLesson.videoUrl} type="video/mp4" />
                   Your browser does not support the video tag.

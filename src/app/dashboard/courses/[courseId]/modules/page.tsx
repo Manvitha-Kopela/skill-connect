@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -50,6 +49,7 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
   const { courseId } = use(params);
   const { toast } = useToast();
   const router = useRouter();
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
   
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +80,6 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
       if (res.ok) {
         const data = await res.json();
         setModules(data);
-        // Initially expand first module if exists
         if (data.length > 0 && Object.keys(expandedModules).length === 0) {
           setExpandedModules({ [data[0].id]: true });
         }
@@ -95,6 +94,12 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
   useEffect(() => {
     fetchModules();
   }, [courseId]);
+
+  const handlePlayPreview = () => {
+    if (videoPreviewRef.current) {
+      videoPreviewRef.current.muted = false;
+    }
+  };
 
   const toggleModule = (id: string) => {
     setExpandedModules(prev => ({ ...prev, [id]: !prev[id] }));
@@ -516,9 +521,11 @@ export default function ModuleManagementPage({ params }: { params: Promise<{ cou
             {selectedLesson?.videoUrl ? (
               <video 
                 key={selectedLesson.id}
+                ref={videoPreviewRef}
                 controls 
                 className="w-full h-full"
                 controlsList="nodownload"
+                onPlay={handlePlayPreview}
               >
                 <source src={selectedLesson.videoUrl} type="video/mp4" />
               </video>
