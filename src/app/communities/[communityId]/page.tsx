@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
@@ -13,13 +12,13 @@ import {
   Book,
   Users,
   MessageSquare,
+  Settings,
 } from 'lucide-react';
 import { cookies } from 'next/headers';
 import * as jose from 'jose';
 import { Prisma } from '@prisma/client';
 import JoinCommunityButton from '@/components/join-community-button';
 
-// Define the precise type for Community including discussions and nested relations
 type CommunityWithDiscussions = Prisma.CommunityGetPayload<{
   include: {
     discussions: {
@@ -81,7 +80,7 @@ async function getTopContributors(communityId: string) {
       where: { communityId },
       include: { user: true },
       take: 5,
-      orderBy: { joinedAt: 'asc' } // Placeholder for activity ranking
+      orderBy: { joinedAt: 'asc' }
     });
     return members.map(m => ({ ...m.user, title: m.role === 'ADMIN' ? 'Moderator' : 'Contributor' }));
   } catch (error) {
@@ -90,21 +89,19 @@ async function getTopContributors(communityId: string) {
   }
 }
 
-async function checkIsMember(userId: string | null, communityId: string) {
-  if (!userId) return false;
+async function checkMembershipInfo(userId: string | null, communityId: string) {
+  if (!userId) return { isMember: false, role: null };
   const membership = await prisma.communityMember.findUnique({
     where: {
       userId_communityId: { userId, communityId }
     }
   });
-  return !!membership;
+  return { isMember: !!membership, role: membership?.role || null };
 }
 
 async function getActiveMemberCount(communityId: string) {
   try {
-    // Define "Active" as users seen within the last 5 minutes
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
     const count = await prisma.communityMember.count({
       where: {
         communityId,
@@ -117,7 +114,6 @@ async function getActiveMemberCount(communityId: string) {
     });
     return count;
   } catch (error) {
-    // Fallback to 0 if column doesn't exist yet or query fails
     return 0;
   }
 }
@@ -133,15 +129,16 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
     notFound();
   }
 
-  const [topContributors, isMember, activeNow] = await Promise.all([
+  const [{ isMember, role }, topContributors, activeNow] = await Promise.all([
+    checkMembershipInfo(currentUserId, communityId),
     getTopContributors(communityId),
-    checkIsMember(currentUserId, communityId),
     getActiveMemberCount(communityId)
   ]);
 
+  const isCreator = role === 'ADMIN';
+
   return (
     <div className="space-y-6 sm:space-y-10">
-      {/* Banner */}
       <div className="relative h-40 sm:h-64 lg:h-80 w-full overflow-hidden rounded-xl bg-primary/10">
         <Image
           src={community.thumbnailUrl}
@@ -162,7 +159,14 @@ export default async function CommunityDetailPage({ params }: { params: Promise<
                 {community.description}
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              {isCreator && (
+                <Button asChild size="lg" className="font-bold shadow-lg bg-accent hover:bg-accent/90 text-accent-foreground">
+                  <Link href={`/dashboard/communities/${community.id}`}>
+                    <Settings className="mr-2 h-4 w-4" /> Manage
+                  </Link>
+                </Button>
+              )}
               <Button asChild size="lg" variant="secondary" className="font-bold border bg-muted text-foreground hover:bg-muted/80 shadow-lg cursor-pointer">
                 <Link href={`/communities/${community.id}/posts`}>View Discussions</Link>
               </Button>

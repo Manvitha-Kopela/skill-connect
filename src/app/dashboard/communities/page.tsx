@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Plus, MessageSquare, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,14 @@ export default async function MyCommunitiesDashboard() {
     include: {
       _count: {
         select: { members: true, discussions: true }
+      },
+      members: {
+        where: {
+          userId: user.userId as string
+        },
+        select: {
+          role: true
+        }
       }
     },
     orderBy: { createdAt: 'desc' }
@@ -74,44 +83,50 @@ export default async function MyCommunitiesDashboard() {
         </Card>
       ) : (
         <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-          {communities.map((community) => (
-            <Card key={community.id} className="overflow-hidden group hover:shadow-md transition-shadow">
-              <div className="relative h-32 w-full">
-                <Image 
-                  src={community.thumbnailUrl} 
-                  alt={community.name} 
-                  fill 
-                  className="object-cover transition-transform group-hover:scale-105" 
-                />
-                <div className="absolute inset-0 bg-black/40" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                   <h3 className="text-white font-bold text-lg px-4 text-center line-clamp-2">{community.name}</h3>
+          {communities.map((community) => {
+            const isCreator = community.members[0]?.role === 'ADMIN';
+            
+            return (
+              <Card key={community.id} className="overflow-hidden group hover:shadow-md transition-shadow">
+                <div className="relative h-32 w-full">
+                  <Image 
+                    src={community.thumbnailUrl} 
+                    alt={community.name} 
+                    fill 
+                    className="object-cover transition-transform group-hover:scale-105" 
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                     <h3 className="text-white font-bold text-lg px-4 text-center line-clamp-2">{community.name}</h3>
+                  </div>
                 </div>
-              </div>
-              <CardContent className="p-4 space-y-4">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                   <div className="flex items-center gap-1.5">
-                     <Users className="h-3.5 w-3.5" />
-                     {community._count.members} Members
-                   </div>
-                   <div className="flex items-center gap-1.5">
-                     <MessageSquare className="h-3.5 w-3.5" />
-                     {community._count.discussions} Discussions
-                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  <Button asChild variant="outline" size="sm" className="w-full">
-                    <Link href={`/communities/${community.id}`}>View Feed</Link>
-                  </Button>
-                  <Button asChild size="sm" className="w-full">
-                    <Link href={`/dashboard/communities/${community.id}`}>
-                      Manage <Settings className="ml-2 h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                     <div className="flex items-center gap-1.5">
+                       <Users className="h-3.5 w-3.5" />
+                       {community._count.members} Members
+                     </div>
+                     <div className="flex items-center gap-1.5">
+                       <MessageSquare className="h-3.5 w-3.5" />
+                       {community._count.discussions} Discussions
+                     </div>
+                  </div>
+                  <div className={cn("grid gap-2 pt-2", isCreator ? "grid-cols-2" : "grid-cols-1")}>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <Link href={`/communities/${community.id}`}>View Feed</Link>
+                    </Button>
+                    {isCreator && (
+                      <Button asChild size="sm" className="w-full">
+                        <Link href={`/dashboard/communities/${community.id}`}>
+                          Manage <Settings className="ml-2 h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

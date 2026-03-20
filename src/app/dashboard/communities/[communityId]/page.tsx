@@ -1,4 +1,3 @@
-
 import prisma from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -38,11 +37,25 @@ export default async function CommunityManagementPage({ params }: { params: Prom
   const community = await prisma.community.findUnique({
     where: { id: communityId },
     include: {
-      _count: { select: { members: true, posts: true } }
+      _count: { select: { members: true, discussions: true } }
     },
   });
 
   if (!community) notFound();
+
+  // Verify the current user is an ADMIN of this community
+  const membership = await prisma.communityMember.findUnique({
+    where: {
+      userId_communityId: {
+        userId: user.userId as string,
+        communityId: community.id
+      }
+    }
+  });
+
+  if (!membership || membership.role !== 'ADMIN') {
+    redirect('/dashboard/communities');
+  }
 
   return (
     <div className="space-y-8">
@@ -94,8 +107,8 @@ export default async function CommunityManagementPage({ params }: { params: Prom
                 <span className="font-bold">{community._count.members}</span>
              </div>
              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">New this week</span>
-                <span className="font-bold text-green-600">+12</span>
+                <span className="text-muted-foreground">Active Now</span>
+                <span className="font-bold text-green-600">Live</span>
              </div>
              <Button variant="outline" className="w-full mt-4">Manage Members</Button>
           </CardContent>
@@ -111,7 +124,7 @@ export default async function CommunityManagementPage({ params }: { params: Prom
           <CardContent className="space-y-4">
              <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Total Posts</span>
-                <span className="font-bold">{community._count.posts}</span>
+                <span className="font-bold">{community._count.discussions}</span>
              </div>
              <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Pending Reports</span>

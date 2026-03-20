@@ -11,6 +11,11 @@ export async function GET() {
             members: true,
           }
         },
+        members: {
+          where: { role: 'ADMIN' },
+          take: 1,
+          select: { userId: true }
+        },
         discussions: {
           include: {
             author: {
@@ -27,7 +32,7 @@ export async function GET() {
             }
           },
           orderBy: {
-            createdAt: 'desc'
+            id: 'desc'
           },
           take: 10
         }
@@ -37,7 +42,13 @@ export async function GET() {
       }
     });
     
-    return NextResponse.json(communities || []);
+    // Enrich community data with creatorId derived from the ADMIN member
+    const enrichedCommunities = communities.map(community => ({
+      ...community,
+      creatorId: community.members[0]?.userId || null
+    }));
+
+    return NextResponse.json(enrichedCommunities || []);
   } catch (error: any) {
     console.error('Communities fetch error:', error);
 
