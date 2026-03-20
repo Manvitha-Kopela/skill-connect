@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useCallback } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,13 +59,23 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
         if (courseRes.ok && courseData.success) {
           const found = courseData.courses.find((c: any) => c.id === courseId);
           if (found) {
+            // Course state update with equality check
             setCourse((prev: any) => {
-              if (JSON.stringify(prev) === JSON.stringify(found)) return prev;
+              if (JSON.stringify(prev) === JSON.stringify(found)) {
+                return prev;
+              }
               return found;
             });
 
             const currentProgress = statusData.progress || 0;
-            setProgress(currentProgress);
+            
+            // Progress state update with equality check
+            setProgress(prev => {
+              if (prev === currentProgress) {
+                return prev;
+              }
+              return currentProgress;
+            });
             
             const allLessons: any[] = [];
             found.modules.forEach((m: any) => {
@@ -74,20 +84,21 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
             
             const total = allLessons.length;
             const completedCount = total > 0 ? Math.round((currentProgress / 100) * total) : 0;
-            const completedIds = allLessons.slice(0, completedCount).map(l => l.id);
+            const completedIds = allLessons.slice(0, completedCount).map((l: any) => l.id);
             
-            setCompletedLessonIds((prev) => {
-              if (JSON.stringify(prev) === JSON.stringify(completedIds)) return prev;
+            // Completed lessons state update with equality check
+            setCompletedLessonIds(prev => {
+              if (JSON.stringify(prev) === JSON.stringify(completedIds)) {
+                return prev;
+              }
               return completedIds;
             });
             
             if (found.modules?.length > 0) {
               const firstLesson = found.modules[0].lessons?.[0];
               if (firstLesson) {
-                setCurrentLesson((prev: any) => {
-                  if (prev) return prev;
-                  return firstLesson;
-                });
+                // Initial lesson update using the requested pattern
+                setCurrentLesson((prev: any) => prev ?? firstLesson);
               }
             }
           }
@@ -122,7 +133,9 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
 
       if (res.ok) {
         const data = await res.json();
-        setProgress(data.progress);
+        const newProgress = data.progress;
+        
+        setProgress(prev => prev === newProgress ? prev : newProgress);
         setCompletedLessonIds(prev => {
           if (prev.includes(currentLesson.id)) return prev;
           return [...prev, currentLesson.id];
