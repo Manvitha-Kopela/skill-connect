@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
+/**
+ * @fileOverview Handles the daily coin reward logic.
+ * Prevents multiple claims per day and ensures transaction records are created.
+ */
+
 export async function POST(req: NextRequest) {
   const token = req.cookies.get('token')?.value;
 
@@ -21,27 +26,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    // Check if user already checked in today
+    // Check if user already claimed a daily reward in the last 24 hours
     const lastTransaction = await prisma.coinTransaction.findFirst({
       where: {
         userId: userId,
-        type: 'EARN',
-        reason: 'Daily Check-in',
+        type: 'DAILY_REWARD',
       },
       orderBy: {
-        createdAt: 'desc',
+        id: 'desc', // Safe fallback if createdAt is inconsistent
       },
     });
 
     if (lastTransaction) {
-      const lastCheckinDate = new Date(lastTransaction.createdAt).toDateString();
-      const todayDate = new Date().toDateString();
-      if (lastCheckinDate === todayDate) {
-        return NextResponse.json({ message: 'Already checked in today' }, { status: 400 });
+      const lastCheckinTime = new Date(lastTransaction.createdAt).getTime();
+      const now = Date.now();
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+
+      if (now - lastCheckinTime < twentyFourHours) {
+        return NextResponse.json({ message: 'Come back tomorrow' }, { status: 400 });
       }
     }
 
-    const rewardAmount = 10;
+    const rewardAmount = 25; // Standard daily reward
 
     const result = await prisma.$transaction([
       prisma.user.update({
@@ -56,8 +62,8 @@ export async function POST(req: NextRequest) {
         data: {
           userId: userId,
           amount: rewardAmount,
-          type: 'EARN',
-          reason: 'Daily Check-in',
+          type: 'DAILY_REWARD',
+          reason: 'Daily Check-in Reward',
         },
       }),
     ]);
@@ -68,6 +74,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Check-in error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ message: 'Failed to claim reward. Please try again later.' }, { status: 500 });
   }
 }

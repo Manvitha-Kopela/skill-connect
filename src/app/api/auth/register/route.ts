@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
@@ -12,6 +11,11 @@ const registerSchema = z.object({
   role: z.nativeEnum(Role).optional(),
 });
 
+/**
+ * @fileOverview Handles user registration.
+ * Now creates a SIGNUP_BONUS transaction record during account creation.
+ */
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -23,18 +27,35 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const initialCoins = 100;
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role || Role.LEARNER,
-        coinBalance: 100, // Default coins
-      },
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role: role || Role.LEARNER,
+          coinBalance: initialCoins,
+        },
+      });
+
+      await tx.coinTransaction.create({
+        data: {
+          userId: newUser.id,
+          amount: initialCoins,
+          type: 'SIGNUP_BONUS',
+          reason: 'Welcome Bonus',
+        },
+      });
+
+      return newUser;
     });
 
-    return NextResponse.json({ message: 'User created successfully', user: { id: user.id, name: user.name, email: user.email, role: user.role } }, { status: 201 });
+    return NextResponse.json({ 
+      message: 'User created successfully', 
+      user: { id: user.id, name: user.name, email: user.email, role: user.role } 
+    }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ message: 'Invalid input', errors: error.errors }, { status: 400 });
