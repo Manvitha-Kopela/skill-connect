@@ -126,7 +126,7 @@ export default function MyCoursesPage() {
                   </div>
                 </div>
                 <Link href={`/dashboard/courses/${course.id}`}>
-                  <button className="w-full bg-orange-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-bold hover:bg-orange-600 transition-colors">
+                  <button className="w-full bg-orange-500 text-white px-4 py-2 rounded flex items-center justify-center gap-2 font-bold hover:bg-orange-600 transition-colors mt-3">
                     <Settings className="h-4 w-4" /> Manage Course →
                   </button>
                 </Link>
