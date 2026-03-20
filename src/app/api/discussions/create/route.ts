@@ -18,7 +18,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Content and Community ID are required' }, { status: 400 });
     }
 
-    // Since the system uses the 'Discussion' model
     const discussionContent = title ? `### ${title}\n\n${content}` : content;
 
     const discussion = await prisma.discussion.create({
@@ -26,6 +25,14 @@ export async function POST(req: NextRequest) {
         content: discussionContent,
         communityId: communityId,
         authorId: decoded.userId
+      },
+      include: {
+        author: {
+          select: { id: true, name: true }
+        },
+        _count: {
+          select: { comments: true, likes: true }
+        }
       }
     })
 

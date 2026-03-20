@@ -8,7 +8,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Reply, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { getComments, addComment, LocalComment } from '@/lib/localComments';
+
+interface Comment {
+  id: string;
+  content: string;
+  authorId: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+  };
+  replies: Comment[];
+}
 
 interface DiscussionCommentsProps {
   discussionId: string;
@@ -17,26 +28,29 @@ interface DiscussionCommentsProps {
 export default function DiscussionComments({ discussionId }: DiscussionCommentsProps) {
   const { user } = useUser();
   const { toast } = useToast();
-  const [comments, setComments] = useState<LocalComment[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState('');
 
-  // Initial load from localStorage
+  const fetchComments = async () => {
+    try {
+      const res = await fetch(`/api/discussions/${discussionId}/comments`);
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch comments", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const stored = getComments(discussionId);
-    setComments(stored);
-    setLoading(false);
-
-    // Periodic cleanup interval (every 60 seconds)
-    const interval = setInterval(() => {
-      const refreshed = getComments(discussionId);
-      setComments(refreshed);
-    }, 60000);
-
-    return () => clearInterval(interval);
+    fetchComments();
   }, [discussionId]);
 
   const handleSubmitComment = async () => {
@@ -45,26 +59,25 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
     
     setSubmitting(true);
     try {
-      const commentObj: LocalComment = {
-        id: crypto.randomUUID(),
-        content: trimmedContent,
-        createdAt: Date.now(),
-        author: {
-          id: user.id,
-          name: user.name,
-        },
-        replies: [],
-      };
+      const res = await fetch(`/api/discussions/${discussionId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: trimmedContent })
+      });
 
-      const updated = addComment(discussionId, commentObj);
-      setComments(updated);
-      setNewComment('');
-      toast({ title: "Success", description: "Comment saved locally (expires in 24h)" });
+      if (res.ok) {
+        const createdComment = await res.json();
+        setComments(prev => [createdComment, ...prev]);
+        setNewComment('');
+        toast({ title: "Success", description: "Comment posted!" });
+      } else {
+        throw new Error("Failed to post comment");
+      }
     } catch (err) {
       toast({ 
         variant: 'destructive', 
         title: 'Error', 
-        description: 'Failed to save comment' 
+        description: 'Failed to post comment' 
       });
     } finally {
       setSubmitting(false);
@@ -77,27 +90,31 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
 
     setSubmitting(true);
     try {
-      const replyObj: LocalComment = {
-        id: crypto.randomUUID(),
-        content: trimmedReply,
-        createdAt: Date.now(),
-        author: {
-          id: user.id,
-          name: user.name,
-        },
-        replies: [],
-      };
+      const res = await fetch(`/api/comments/${parentId}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: trimmedReply })
+      });
 
-      const updated = addComment(discussionId, replyObj, parentId);
-      setComments(updated);
-      setReplyContent('');
-      setReplyingTo(null);
-      toast({ title: "Success", description: "Reply saved locally" });
+      if (res.ok) {
+        const createdReply = await res.json();
+        setComments(prev => prev.map(c => {
+          if (c.id === parentId) {
+            return { ...c, replies: [...(c.replies || []), createdReply] };
+          }
+          return c;
+        }));
+        setReplyContent('');
+        setReplyingTo(null);
+        toast({ title: "Success", description: "Reply posted!" });
+      } else {
+        throw new Error("Failed to post reply");
+      }
     } catch (err) {
       toast({ 
         variant: 'destructive', 
         title: 'Error', 
-        description: 'Failed to save reply' 
+        description: 'Failed to post reply' 
       });
     } finally {
       setSubmitting(false);
@@ -116,12 +133,8 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
         <h3 className="text-xl font-bold flex items-center gap-2">
           Comments ({totalComments})
         </h3>
-        <span className="text-[10px] uppercase font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded">
-          Local Storage / 24h Expiry
-        </span>
       </div>
 
-      {/* Comments List - Now appearing BEFORE input */}
       <div className="space-y-6">
         {comments.map((comment) => (
           <div key={comment.id} className="space-y-4">
@@ -202,7 +215,6 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
         )}
       </div>
 
-      {/* Input Section - Now appearing AFTER list */}
       {user ? (
         <div className="flex gap-4 pt-4 border-t">
           <Avatar>

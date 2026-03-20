@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { discussionId: string } }
+  { params }: { params: Promise<{ discussionId: string }> }
 ) {
-  const { discussionId } = params;
+  const { discussionId } = await params;
 
   try {
     const comments = await prisma.comment.findMany({
@@ -39,9 +39,9 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { discussionId: string } }
+  { params }: { params: Promise<{ discussionId: string }> }
 ) {
-  const { discussionId } = params;
+  const { discussionId } = await params;
   const token = req.cookies.get('token')?.value;
 
   if (!token) {
