@@ -268,6 +268,12 @@ function CourseProgressCard({ title, progress, nextLesson, onContinue }: any) {
 }
 
 function ActivitySidebar({ activities, onViewWallet }: { activities: any[], onViewWallet: () => void }) {
+  const formatDateSafe = (dateStr?: string) => {
+    if (!dateStr) return 'Recently';
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime()) ? formatDistanceToNow(date, { addSuffix: true }) : 'Recently';
+  };
+
   return (
     <Card className="rounded-2xl shadow-sm border-primary/5 sticky top-24">
       <CardHeader>
@@ -284,7 +290,7 @@ function ActivitySidebar({ activities, onViewWallet }: { activities: any[], onVi
               <div className="space-y-1">
                 <p className="text-sm font-bold leading-tight group-hover:text-primary transition-colors">{item.text}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(item.date), { addSuffix: true })}
+                  {formatDateSafe(item.date)}
                 </p>
               </div>
             </div>

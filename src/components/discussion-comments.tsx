@@ -13,7 +13,7 @@ interface Comment {
   id: string;
   content: string;
   authorId: string;
-  createdAt: string;
+  createdAt?: string;
   author: {
     id: string;
     name: string;
@@ -52,6 +52,12 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
   useEffect(() => {
     fetchComments();
   }, [discussionId]);
+
+  const formatDateSafe = (dateStr?: string) => {
+    if (!dateStr) return 'Just now';
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime()) ? formatDistanceToNow(date, { addSuffix: true }) : 'Just now';
+  };
 
   const handleSubmitComment = async () => {
     const trimmedContent = newComment.trim();
@@ -147,7 +153,7 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm">{comment.author.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                    {formatDateSafe(comment.createdAt)}
                   </span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
@@ -197,7 +203,7 @@ export default function DiscussionComments({ discussionId }: DiscussionCommentsP
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs">{reply.author.name}</span>
                         <span className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
+                          {formatDateSafe(reply.createdAt)}
                         </span>
                       </div>
                       <p className="text-xs whitespace-pre-wrap">{reply.content}</p>

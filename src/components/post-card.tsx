@@ -32,7 +32,7 @@ interface PostCardProps {
     content: string;
     authorId: string;
     communityId: string;
-    createdAt: string;
+    createdAt?: string;
     author: {
       name: string;
     };
@@ -77,6 +77,12 @@ export default function PostCard({ post, isDetail = false }: PostCardProps) {
   const postVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
+  };
+
+  const formatDateSafe = (dateStr?: string) => {
+    if (!dateStr) return 'Recently';
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime()) ? formatDistanceToNow(date, { addSuffix: true }) : 'Recently';
   };
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -200,7 +206,7 @@ export default function PostCard({ post, isDetail = false }: PostCardProps) {
             <div>
               <p className="font-semibold">{post.author.name}</p>
               <p className="text-sm text-muted-foreground">
-                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                {formatDateSafe(post.createdAt)}
               </p>
             </div>
           </div>
