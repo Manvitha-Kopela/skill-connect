@@ -35,8 +35,8 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
           const found = data.courses.find((c: any) => c.id === courseId);
           if (found) {
             setCourse(found);
-            // Set first lesson as default
-            if (found.modules?.[0]?.lessons?.[0]) {
+            // Set first lesson as default if not already set
+            if (found.modules?.length > 0 && found.modules[0].lessons?.length > 0) {
               setCurrentLesson(found.modules[0].lessons[0]);
             }
           }
@@ -49,6 +49,13 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
     }
     fetchCourseData();
   }, [courseId]);
+
+  // Debug video URL changes
+  useEffect(() => {
+    if (currentLesson?.videoUrl) {
+      console.log("Current Lesson Video URL:", currentLesson.videoUrl);
+    }
+  }, [currentLesson]);
 
   if (loading) {
     return (
@@ -69,6 +76,13 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
       </div>
     );
   }
+
+  // Helper to ensure video URL is usable
+  const getVideoSrc = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith('http') || url.startsWith('/')) return url;
+    return `/${url}`;
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -95,8 +109,9 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                   controls 
                   className="w-full h-full"
                   poster={course.thumbnailUrl}
+                  autoPlay={false}
                 >
-                  <source src={currentLesson.videoUrl.startsWith('/') ? currentLesson.videoUrl : `/${currentLesson.videoUrl}`} type="video/mp4" />
+                  <source src={getVideoSrc(currentLesson.videoUrl)} type="video/mp4" />
                   Your browser does not support the video tag.
                 </video>
               ) : (
@@ -133,7 +148,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
               
               <div className="prose prose-neutral dark:prose-invert max-w-none">
                 <h3 className="text-xl font-black mb-4">Lesson Overview</h3>
-                <p className="text-muted-foreground leading-relaxed text-lg">
+                <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-wrap">
                   {currentLesson?.description || "In this lesson, we dive deep into the core concepts of this module. Follow along with the video and take notes on the key patterns demonstrated."}
                 </p>
               </div>
