@@ -74,12 +74,11 @@ export default function AddLessonButton({ moduleId }: AddLessonButtonProps) {
         videoUrl = uploadData.url;
       }
 
-      // 2. Save Lesson to DB
-      const lessonRes = await fetch("/api/lessons", {
+      // 2. Save Lesson to DB via module-nested endpoint
+      const lessonRes = await fetch(`/api/modules/${moduleId}/lessons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          moduleId,
           title: title.trim(),
           description: description.trim(),
           duration,
@@ -89,13 +88,15 @@ export default function AddLessonButton({ moduleId }: AddLessonButtonProps) {
 
       if (!lessonRes.ok) {
         const err = await lessonRes.json();
-        throw new Error(err.error || "Failed to create lesson record");
+        throw new Error(err.message || "Failed to create lesson record");
       }
 
       toast({ title: "Success", description: "Lesson created and video uploaded successfully" });
       setOpen(false);
       setTitle('');
       setDescription('');
+      
+      // Use window.location.reload() or router.refresh() depending on state strategy
       window.location.reload();
     } catch (error: any) {
       toast({ 
@@ -110,16 +111,19 @@ export default function AddLessonButton({ moduleId }: AddLessonButtonProps) {
 
   return (
     <>
-      <Button size="sm" variant="outline" className="h-8 gap-2" onClick={() => setOpen(true)}>
+      <Button size="sm" variant="outline" className="h-8 gap-2 font-bold cursor-pointer" onClick={(e) => {
+        e.stopPropagation();
+        setOpen(true);
+      }}>
         <PlusCircle className="h-3 w-3" /> Add Lesson
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px]" onClick={(e) => e.stopPropagation()}>
           <DialogHeader>
-            <DialogTitle>Add New Lesson</DialogTitle>
+            <DialogTitle className="text-xl font-black">Add New Lesson</DialogTitle>
             <DialogDescription>
-              Create a new educational lesson. Videos will be stored securely in the cloud.
+              Create a new educational lesson for this module.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-6 py-4">
@@ -130,7 +134,7 @@ export default function AddLessonButton({ moduleId }: AddLessonButtonProps) {
                 </Label>
                 <Input
                   id="lesson-title"
-                  placeholder="e.g. Introduction to React Components"
+                  placeholder="e.g. Introduction to Variables"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
@@ -143,7 +147,7 @@ export default function AddLessonButton({ moduleId }: AddLessonButtonProps) {
                 <Label htmlFor="lesson-description" className="text-sm font-bold">Description</Label>
                 <Textarea
                   id="lesson-description"
-                  placeholder="Provide a brief overview of what this lesson covers..."
+                  placeholder="What will this lesson cover?"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="min-h-[100px] resize-none"

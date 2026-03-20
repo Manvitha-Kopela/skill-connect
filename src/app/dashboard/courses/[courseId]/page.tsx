@@ -8,14 +8,11 @@ import { Separator } from '@/components/ui/separator';
 import { 
   PlusCircle, 
   ArrowLeft, 
-  BookOpen, 
   Layers, 
-  Play, 
-  Clock, 
-  Edit, 
   ExternalLink,
   ChevronRight,
   Coins,
+  Play,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +88,7 @@ export default async function CourseEditorPage({
   });
 
   const totalEarnings = earningsData._sum.amount || 0;
+  const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
   return (
     <div className="space-y-8">
@@ -136,35 +134,18 @@ export default async function CourseEditorPage({
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Layers className="h-5 w-5 text-blue-500" />
-              Modules
+              Curriculum
             </CardTitle>
-            <CardDescription>Manage course sections</CardDescription>
+            <CardDescription>Manage modules & lessons</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{course.modules.length}</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-3xl font-bold">{course.modules.length} Modules</p>
+              <p className="text-sm text-muted-foreground">{totalLessons} Lessons total</p>
+            </div>
             <Button asChild variant="link" className="px-0 mt-4 text-primary cursor-pointer">
               <Link href={`/dashboard/courses/${course.id}/modules`} className="flex items-center">
-                Configure Modules <ChevronRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:border-primary transition-colors">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Play className="h-5 w-5 text-green-500" />
-              Lessons
-            </CardTitle>
-            <CardDescription>Video content & tutorials</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {course.modules.reduce((acc, m) => acc + m.lessons.length, 0)}
-            </p>
-            <Button asChild variant="link" className="px-0 mt-4 text-primary cursor-pointer">
-              <Link href={`/dashboard/courses/${course.id}/lessons`} className="flex items-center">
-                Manage Content <ChevronRight className="ml-1 h-4 w-4" />
+                Configure Curriculum <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
           </CardContent>
@@ -183,11 +164,25 @@ export default async function CourseEditorPage({
             <p className="text-xs text-muted-foreground mt-2">Total coins from enrollments</p>
           </CardContent>
         </Card>
+
+        <Card className="hover:border-primary transition-colors">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Play className="h-5 w-5 text-green-500" />
+              Status
+            </CardTitle>
+            <CardDescription>Current visibility</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Badge className="bg-green-500 hover:bg-green-600">Published</Badge>
+            <p className="text-xs text-muted-foreground mt-4">Your course is live and earn-eligible.</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Curriculum</CardTitle>
+          <CardTitle>Recent Curriculum Structure</CardTitle>
         </CardHeader>
         <CardContent>
            <div className="space-y-4">

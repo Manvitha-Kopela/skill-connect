@@ -12,6 +12,9 @@ export async function GET(
       where: { courseId },
       orderBy: { order: 'asc' },
       include: {
+        lessons: {
+          orderBy: { order: 'asc' }
+        },
         _count: {
           select: { lessons: true }
         }
