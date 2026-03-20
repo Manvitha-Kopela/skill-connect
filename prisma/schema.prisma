@@ -23,10 +23,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  courses       Course[]  @relation("InstructorCourses")
+  courses       Course[]
   enrollments   Enrollment[]
-  coinTransactions CoinTransaction[]
-  communityMemberships CommunityMember[]
+  transactions  CoinTransaction[]
+  communityMembers CommunityMember[]
   discussions   Discussion[]
   comments      Comment[]
   likes         DiscussionLike[]
@@ -44,36 +44,36 @@ model Course {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  instructor    User      @relation("InstructorCourses", fields: [instructorId], references: [id])
+  instructor    User      @relation(fields: [instructorId], references: [id])
   modules       Module[]
   enrollments   Enrollment[]
 }
 
 model Module {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  order       Int
-  courseId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  order         Int
+  courseId      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons     Lesson[]
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons       Lesson[]
 }
 
 model Lesson {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  videoUrl    String?
-  duration    String   @default("0:00")
-  order       Int
-  moduleId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  order         Int
+  duration      String    @default("0:00")
+  videoUrl      String?
+  moduleId      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module        Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 }
 
 model Enrollment {
@@ -91,17 +91,17 @@ model Enrollment {
 }
 
 model Community {
-  id           String   @id @default(cuid())
-  name         String
-  description  String?
-  thumbnailUrl String
-  category     String
-  memberCount  Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  category      String
+  thumbnailUrl  String
+  memberCount   Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  members     CommunityMember[]
-  discussions Discussion[]
+  members       CommunityMember[]
+  discussions   Discussion[]
 }
 
 model CommunityMember {
@@ -120,34 +120,19 @@ model CommunityMember {
 model Discussion {
   id          String   @id @default(cuid())
   content     String
-  communityId String
   authorId    String
+  communityId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  author    User             @relation(fields: [authorId], references: [id])
-  community Community        @relation(fields: [communityId], references: [id])
+  author    User      @relation(fields: [authorId], references: [id])
+  community Community @relation(fields: [communityId], references: [id])
   comments  Comment[]
   likes     DiscussionLike[]
 }
 
-model Comment {
-  id           String   @id @default(cuid())
-  content      String
-  discussionId String
-  authorId     String
-  parentId     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  author     User       @relation(fields: [authorId], references: [id])
-  discussion Discussion @relation(fields: [discussionId], references: [id])
-  parent     Comment?   @relation("CommentReplies", fields: [parentId], references: [id])
-  replies    Comment[]  @relation("CommentReplies")
-}
-
 model DiscussionLike {
-  id           String   @id @default(cuid())
+  id           String @id @default(cuid())
   userId       String
   discussionId String
   createdAt    DateTime @default(now())
@@ -158,11 +143,26 @@ model DiscussionLike {
   @@unique([userId, discussionId])
 }
 
+model Comment {
+  id           String   @id @default(cuid())
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  authorId     String
+  discussionId String
+  parentId     String?
+
+  author     User       @relation(fields: [authorId], references: [id])
+  discussion Discussion @relation(fields: [discussionId], references: [id])
+  parent     Comment?   @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    Comment[]  @relation("CommentReplies")
+}
+
 model CoinTransaction {
   id        String   @id @default(cuid())
   userId    String
   amount    Int
-  type      String
+  type      String   
   reason    String
   createdAt DateTime @default(now())
 
