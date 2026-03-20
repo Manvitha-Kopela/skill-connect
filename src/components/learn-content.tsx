@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,6 +7,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Play, CheckCircle, ArrowLeft, BookOpen, Video } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 interface LearnContentProps {
   course: any;
@@ -16,6 +23,7 @@ interface LearnContentProps {
 export default function LearnContent({ course }: LearnContentProps) {
   const allLessons = course.modules.flatMap((m: any) => m.lessons);
   const [currentLesson, setCurrentLesson] = useState(allLessons[0] || null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   if (!course.modules || course.modules.length === 0) {
     return (
@@ -112,7 +120,7 @@ export default function LearnContent({ course }: LearnContentProps) {
                   <h1 className="text-2xl font-black">{currentLesson.title}</h1>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="font-bold">
+                  <Button variant="outline" size="sm" className="font-bold" onClick={() => setIsCompleteDialogOpen(true)}>
                     Mark as Complete
                   </Button>
                 </div>
@@ -131,6 +139,20 @@ export default function LearnContent({ course }: LearnContentProps) {
           </div>
         )}
       </main>
+
+      <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lesson Completed 🎉</DialogTitle>
+            <DialogDescription>
+              Great job! You've successfully finished this lesson. Keep up the momentum!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsCompleteDialogOpen(false)}>Continue Learning</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

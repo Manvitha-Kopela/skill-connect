@@ -16,6 +16,14 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function LearningPage({ params }: { params: Promise<{ courseId: string }> }) {
   const resolvedParams = use(params);
@@ -25,6 +33,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentLesson, setCurrentLesson] = useState<any>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCourseData() {
@@ -54,7 +63,7 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
   }, [courseId]);
 
   const handleCompleteLesson = () => {
-    alert("Great job! Lesson marked as complete.");
+    setIsCompleteDialogOpen(true);
   };
 
   if (loading) {
@@ -102,7 +111,6 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
                   controls 
                   className="w-full h-full"
                   poster={course.thumbnailUrl}
-                  autoPlay
                 >
                   <source src={currentLesson.videoUrl} type="video/mp4" />
                   Your browser does not support the video tag.
@@ -204,6 +212,20 @@ export default function LearningPage({ params }: { params: Promise<{ courseId: s
           </Card>
         </div>
       </div>
+
+      <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lesson Completed 🎉</DialogTitle>
+            <DialogDescription>
+              Great job! You've successfully finished this lesson. Keep up the momentum!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setIsCompleteDialogOpen(false)}>Continue Learning</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
